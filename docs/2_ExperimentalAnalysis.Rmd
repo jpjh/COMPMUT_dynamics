@@ -1,0 +1,1255 @@
+---
+title: "COMPMUT Dynamics 2: Data analysis"
+date: "compiled November 2023"
+author: "jpjh"
+output: rmarkdown::github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+source("./functions/theme_pub.r")
+
+theme_github <- function(x){
+  theme_pub(base_size=12)
+}
+theme_set(theme_github())
+```
+
+## Analysis of plaCM/chrCM experiment dynamics
+
+### Experiment 1
+
+Quick look at data:
+
+```{r}
+(df <- read.table("./data/fraction_data.txt", header=TRUE, quote='""')) %>% head() %>% kable()
+```
+
+Reminder for output from Experiment 1:
+
+```{r}
+(df_expt1 <- df %>%
+  filter(Experiment == 1 & Treatment %in% c("A", "AM", "C", "CM")) %>%
+  pivot_longer(starts_with("Fraction"), names_to = "Fluorescence", names_prefix = "Fraction_",
+               values_to = "Fraction") %>%
+  mutate(Population = factor(
+    case_when(startsWith(Treatment, "A") & Fluorescence == "Yellow" ~ "plaCM",
+              startsWith(Treatment, "A") & Fluorescence == "Red" ~ "chrCM",
+              startsWith(Treatment, "C") & Fluorescence == "Yellow" ~ "chrCM",
+              startsWith(Treatment, "C") & Fluorescence == "Red" ~ "plaCM",
+              Fluorescence == "Orange" ~ "double / clumped",
+              Fluorescence == "Blue" ~ "none"),
+    levels=c("double / clumped", "chrCM", "plaCM", "none")),
+         Selection = ifelse(endsWith(Treatment, "M"), "Yes", "No"),
+         Markers = ifelse(startsWith(Treatment, "A"), "Red / Yellow",
+                          "Yellow / Red"))) %>%
+  ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
+  geom_area() + 
+  facet_grid(Selection + Markers ~ Replicate) +
+  scale_fill_manual(
+    breaks=c("chrCM", "plaCM", "none", "double / clumped"),
+    values=c("#882255", "#44AA99", "#DDDDDD", "#000000"))
+```
+
+Plot the ratio of chrCM to plaCM, averaged over reps with SE. Add in the Transfer = 0 data for the 'Selection = Yes' treatment.
+
+```{r}
+(dat_1 <- df_expt1 %>% filter(Transfer==0) %>%
+  mutate(Selection = "Yes") %>%
+  bind_rows(df_expt1) %>%
+  select(-Fluorescence, -Ratio) %>%
+  pivot_wider(names_from="Population", values_from="Fraction") %>%
+   mutate(pop = as.factor(paste(Treatment, Replicate, sep=".")),
+          count_plaCM = round(Total_count * plaCM),
+          count_chrCM = round(Total_count * chrCM),
+          plaCM_ratio = count_plaCM / (count_plaCM + count_chrCM),
+          transf = scale(Transfer))) %>% head()
+
+ggplot(data=dat_1, aes(x=Transfer, y=plaCM_ratio, colour=Markers,
+                       group=interaction(Replicate, Markers))) +
+  geom_point() + geom_line() + 
+    ggtitle("Experiment 1") +
+  facet_grid(.~Selection) + theme(legend.position="bottom")
+```
+
+#### Experiment 1: Analysis
+
+Pre-model diagnostics. Plot transformed response against groups to test for inhomogeneity in variance.
+
+```{r}
+library(car)
+
+dat_1 <- within(dat_1, {
+  groups <- interaction(Selection, Markers, transf)
+  groups <- reorder(groups, plaCM_ratio, mean)
+  logitrat = logit(plaCM_ratio)
+})
+
+ggplot(data=dat_1, aes(x=groups, y=logitrat)) + 
+  geom_point() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Looks good -- variance appears largely homogenous across samples/timepoint. 
+
+Plot data with logit transform.
+
+```{r}
+ggplot(data=dat_1, aes(x=Transfer, y=logitrat, colour=Markers)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=interaction(Replicate, Markers)), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ x) +
+  ggtitle("Experiment 1") +
+  facet_grid(.~Selection) + theme(legend.position="bottom")
+```
+
+As our data is technically proportional and bounded at 0 and 1, it is better to use a binomial regression GLMM as previously. But since we have relatively large sample sizes towards the middle of the [0,1] distribution, first check using a LMM. Use the centred 'Transfers' (`scale(Transfer)`) to assist calculations and model convergence.
+
+```{r}
+library(nlme)
+
+lmm_dat_1 <- lme(logitrat ~ transf * Selection * Markers,
+                 random = ~1 + transf|pop, data = dat_1)
+
+plot(lmm_dat_1) # no significant outliers
+
+qqPlot(residuals(lmm_dat_1), envelope=0.99)
+# timepoint zero are outliers, smaller than predicted, 
+##  indicating that plaCM does better than expected in initial expansion
+
+VarCorr(lmm_dat_1) # moderate positive correlation (0.6)
+```
+
+Model looks appropriate. Test for significance of fixed effects.
+
+```{r}
+drop1(update(lmm_dat_1, method="ML"), test = "Chisq")
+
+# no 3-way effect
+
+lmm_dat_1.1 <- lme(logitrat ~ transf + Selection + Markers + transf:Selection +
+                          transf:Markers + Selection:Markers,
+                   random = ~1 + transf|pop,
+                   data=dat_1, method="ML")
+drop1(lmm_dat_1.1, test="Chisq")
+```
+
+No marker:selection effect.
+
+```{r}
+lmm_dat_1.2 <- lme(logitrat ~ transf + Selection + transf:Selection +
+                          transf:Markers + Markers,
+                   random = ~1 + transf|pop,
+                   data=dat_1, method="REML")
+
+plot(lmm_dat_1.2)
+
+qqPlot(residuals(lmm_dat_1.2), envelope=0.99) 
+
+VarCorr(lmm_dat_1.2) # moderate correlation (0.6)
+
+summary(lmm_dat_1.2)
+```
+
+Interpretation. Detect significant interactions between Transfer and Selection, and between Transfer and Markers. 
+
+Overall, plaCM is outcompeted over time (effect of (centred) Transfer = -0.31). This is stronger in the presence of selection (interaction effect = -0.53). One set of markers (Yellow/Red) has a reduced loss of plaCM (Marker:Transfer effect = 0.21) but this marker effect does not overcome the overall outcompetition of plaCM. 
+
+Now attempt GLMM with glmmTMB and a beta-binomial distribution. Beta-binomial rather than binomial, since preliminary analyses indicated overdispersion.
+
+```{r}
+library(glmmTMB)
+
+glmm_dat_1 <-glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf * Selection * Markers + (1 + transf|pop),
+                     data=dat_1, family="betabinomial")
+
+summary(glmm_dat_1)
+```
+
+Test model assumptions.
+
+```{r}
+plot(residuals(glmm_dat_1, type="p"))     
+# two possible outliers, but otherwise no trends/patterns
+
+qqPlot(residuals(glmm_dat_1), envelope=0.99) 
+# again, timepoint zero are outliers, smaller than predicted, 
+##  indicating that plaCM does better than modelled in initial expansion
+
+# Check for correlation between random effects
+VarCorr(glmm_dat_1) # moderate correlation (0.6)
+```
+
+Looks mostly ok, though some outliers in qqPlot from transfer 0.
+
+Select optimal fixed effects structure.
+
+```{r}
+glmm_dat_1.1 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ (transf + Selection + Markers)^2 + (1 + transf|pop),
+                     data=dat_1, family="betabinomial")
+anova(glmm_dat_1, glmm_dat_1.1)
+```
+
+No detectable 3-way interaction.
+
+```{r}
+drop1(glmm_dat_1.1, test="Chisq")
+
+glmm_dat_1.2 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf + Selection + transf:Selection +
+                          transf:Markers + Markers + (1 + transf|pop),
+                     data=dat_1, family="betabinomial")
+drop1(glmm_dat_1.2, test="Chisq") %>% kable()
+```
+
+Check model assumptions.
+
+```{r}
+plot(residuals(glmm_dat_1.2, type="p"))
+qqPlot(residuals(glmm_dat_1.2), envelope=0.99) 
+VarCorr(glmm_dat_1.2) # moderate correlation (0.61)
+```
+
+Interpretation. Significant interactions between selection and transfer (steeper loss of plaCM under selection), and significant interaction between marker and transfer (shallower slope for one set of markers).
+
+|                   | Df|      AIC|       LRT| Pr(>Chi)|
+|:------------------|--:|--------:|---------:|--------:|
+|<none>             | NA| 4150.873|        NA|       NA|
+|Transfer:Selection |  1| 4251.803| 102.92966|        0|
+|Transfer:Markers   |  1| 4193.410|  44.53684|        0|
+
+p = 0 here indicates < 1e-7.
+
+```{r}
+summary(glmm_dat_1.2)
+```
+
+Overall, output and interpretation is qualitatively similar to the LMM above.
+
+
+### Experiment 2
+
+Reminder for output from Experiment 2:
+
+```{r}
+(df_expt2 <- df %>%
+  filter(Experiment == 1 & Treatment %in% c("B", "BM", "D", "DM")) %>%
+  pivot_longer(starts_with("Fraction"), names_to = "Fluorescence", names_prefix = "Fraction_",
+               values_to = "Fraction") %>%
+  mutate(Population = factor(
+    case_when(startsWith(Treatment, "B") & Fluorescence == "Yellow" ~ "plaCM",
+              startsWith(Treatment, "B") & Fluorescence == "Red" ~ "chrCM",
+              startsWith(Treatment, "D") & Fluorescence == "Yellow" ~ "chrCM",
+              startsWith(Treatment, "D") & Fluorescence == "Red" ~ "plaCM",
+              Fluorescence == "Orange" ~ "double / clumped",
+              Fluorescence == "Blue" ~ "pQBR103 only"),
+    levels=c("double / clumped", "chrCM", "plaCM", "pQBR103 only")),
+         Selection = ifelse(endsWith(Treatment, "M"), "Yes", "No"),
+         Markers = ifelse(startsWith(Treatment, "B"), "Red / Yellow",
+                          "Yellow / Red"))) %>%
+  ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
+  geom_area() + 
+  facet_grid(Selection + Markers ~ Replicate) +
+  scale_fill_manual(
+    breaks=c("chrCM", "plaCM", "pQBR103 only", "double / clumped"),
+    values=c("#882255", "#44AA99", "#004488", "#000000"))
+```
+
+Plot the ratio of chrCM to plaCM. Add in the Transfer = 0 data for the 'Selection = Yes' treatment.
+
+```{r}
+(dat_2 <- df_expt2 %>% filter(Transfer==0) %>%
+  mutate(Selection = "Yes") %>%
+  bind_rows(df_expt2) %>%
+  select(-Fluorescence, -Ratio) %>%
+  pivot_wider(names_from="Population", values_from="Fraction") %>%
+   mutate(pop = as.factor(paste(Treatment, Replicate, sep=".")),
+          count_plaCM = round(Total_count * plaCM),
+          count_chrCM = round(Total_count * chrCM),
+          plaCM_ratio = count_plaCM / (count_plaCM + count_chrCM),
+          transf = scale(Transfer))) %>% head()
+
+ggplot(data=dat_2, aes(x=Transfer, y=plaCM_ratio, colour=Markers,
+                       group=interaction(Replicate, Markers))) +
+  geom_point() + geom_line() + 
+  ggtitle("Experiment 2") +
+  facet_grid(.~Selection) + theme(legend.position="bottom")
+```
+
+#### Experiment 2: Analysis
+
+Pre-model diagnostics. Plot transformed response against groups to test for inhomogeneity in variance.
+
+```{r}
+dat_2 <- within(dat_2, {
+  groups <- interaction(Selection, Markers, transf)
+  groups <- reorder(groups, plaCM_ratio, mean)
+  logitrat = logit(plaCM_ratio)
+})
+
+ggplot(data=dat_2, aes(x=groups, y=logitrat)) + 
+  geom_point() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Looks good -- variance appears homogenous across samples/timepoint. 
+
+Plot data with logit transform.
+
+```{r}
+ggplot(data=dat_2, aes(x=Transfer, y=logitrat, colour=Markers)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=interaction(Replicate, Markers)), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ x) +
+  ggtitle("Experiment 2") +
+  facet_grid(.~Selection) + theme(legend.position="bottom")
+```
+
+Again, start with a LMM.
+
+```{r}
+lmm_dat_2 <- lme(logitrat ~ transf * Selection * Markers,
+                 random = ~1 + transf|pop, data = dat_2)
+
+plot(lmm_dat_2) # one significant outlier, otherwise largely homogenous
+
+qqPlot(residuals(lmm_dat_2), envelope=0.99)
+# again timepoint zero are outliers, smaller than predicted, 
+##  indicating that plaCM does better than expected in initial expansion
+##  One other significant outlier as identified above.
+
+VarCorr(lmm_dat_2) # some positive correlation (0.7)
+```
+
+Model looks appropriate. Test for significance of fixed effects.
+
+```{r}
+drop1(update(lmm_dat_2, method="ML"), test = "Chisq")
+
+# no 3-way effect
+
+lmm_dat_2.1 <- lme(logitrat ~ transf + Selection + transf:Selection +
+                          transf:Markers + Markers,
+                   random = ~1 + transf|pop,
+                   data=dat_2, method="ML")
+drop1(lmm_dat_2.1, test="Chisq")
+```
+
+No marker:selection effect.
+
+```{r}
+lmm_dat_2.2 <- lme(logitrat ~ transf + Selection + transf:Selection +
+                          transf:Markers + Markers,
+                   random = ~1 + transf|pop,
+                   data=dat_2, method="REML")
+
+plot(lmm_dat_2.2)
+
+qqPlot(residuals(lmm_dat_2.2), envelope=0.99) 
+
+VarCorr(lmm_dat_2.2) # moderate correlation (0.68)
+
+summary(lmm_dat_2.2)
+```
+
+Interpretation. As with experiment 1, we detect significant interactions between Transfer and Selection, and between Transfer and Markers. 
+
+Overall, plaCM is outcompeted over time (effect of (scaled) Transfer = -0.3). This is stronger in the presence of selection (interaction effect = -0.53). One set of markers (Yellow/Red) has a reduced loss of plaCM (Marker:Transfer effect = 0.14) but this marker effect does not overcome the overall outcompetition of plaCM. 
+
+Now attempt GLMM with glmmTMB and a beta-binomial distribution, since preliminary analyses indicated overdispersion.
+
+```{r}
+glmm_dat_2 <-glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf * Selection * Markers + (1 + transf|pop),
+                     data=dat_2, family="betabinomial")
+
+summary(glmm_dat_2)
+```
+
+Test model assumptions.
+
+```{r}
+plot(residuals(glmm_dat_2, type="p"))     
+# one extreme outlier, but everything else looking mostly ok
+
+qqPlot(residuals(glmm_dat_2), envelope=0.99, col=as.factor(dat_2$Transfer))
+# A few outliers here, where expected values are larger/smaller than expected. 
+
+# Check for correlation between random effects
+VarCorr(glmm_dat_2) # some positive correlation (0.68)
+```
+
+Looks ok, though more outliers larger/smaller than expected than with Experiment 1.
+
+Select optimal fixed effects structure.
+
+```{r}
+glmm_dat_2.1 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ (transf + Selection + Markers)^2 + (1 + transf|pop),
+                     data=dat_2, family="betabinomial")
+anova(glmm_dat_2, glmm_dat_2.1)
+```
+
+No 3-way interaction.
+
+```{r}
+drop1(glmm_dat_2.1, test="Chisq") %>% kable()
+```
+
+A marginal marker by selection effect (0.05 > p > 0.045), so leave in the model. 
+
+Check model assumptions.
+
+```{r}
+plot(residuals(glmm_dat_2.1, type="p"))
+qqPlot(residuals(glmm_dat_2.1), envelope=0.99) 
+# some departure from normality for residuals at the extremes
+VarCorr(glmm_dat_2.1) # some positive correlation
+```
+
+Interpretation. Detect significant interactions between Transfer and Selection, and between Transfer and Markers.
+
+|                   | Df|      AIC|       LRT|  Pr(>Chi)|
+|:------------------|--:|--------:|---------:|---------:|
+|<none>             | NA| 4200.195|        NA|        NA|
+|Transfer:Selection |  1| 4289.504| 91.308654| 0.0000000|
+|Transfer:Markers   |  1| 4225.078| 26.883206| 0.0000002|
+|Selection:Markers  |  1| 4202.180|  3.985244| 0.0459004|
+
+```{r}
+summary(glmm_dat_2.1)
+```
+
+Again we see significant effect on plaCM (-0.30), which is exacerbated by selection (-0.52).
+
+### Experiment 3
+
+Load up data and reminder of figure.
+
+```{r}
+(df_expt3 <- df %>%
+  filter(Experiment == 2 & Treatment == "A") %>%
+  pivot_longer(starts_with("Fraction"), names_to = "Fluorescence", names_prefix = "Fraction_",
+               values_to = "Fraction") %>%
+  mutate(Population = factor(
+    case_when(Fluorescence == "Yellow" ~ "plaCM",
+              Fluorescence == "Red" ~ "chrCM",
+              Fluorescence == "Orange" ~ "double / clumped",
+              Fluorescence == "Blue" ~ "none"),
+    levels=c("double / clumped", "chrCM", "plaCM", "none")),
+         Ratio = factor(Ratio,
+                        levels=c(10, 1, 0.1, 0),
+                        labels=c("10:1", "1:1", "1:10", "none")))) %>%
+  ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
+  geom_area() + 
+  facet_grid(Replicate ~ Ratio) +
+    scale_fill_manual(
+    breaks=c("chrCM", "plaCM", "none", "double / clumped"),
+    values=c("#882255", "#44AA99", "#DDDDDD", "#000000"))
+```
+
+Plot the ratio of chrCM to plaCM.
+
+```{r}
+(dat_3 <- df_expt3 %>%
+  select(-Fluorescence) %>%
+  pivot_wider(names_from="Population", values_from="Fraction") %>%
+   mutate(pop = as.factor(paste(Replicate, Ratio, sep=".")),
+          count_plaCM = round(Total_count * plaCM),
+          count_chrCM = round(Total_count * chrCM),
+          plaCM_ratio = count_plaCM / (count_plaCM + count_chrCM),
+          transf = scale(Transfer))) %>% head()
+
+ggplot(data=dat_3, aes(x=Transfer, y=plaCM_ratio,
+                       group=Replicate)) +
+  geom_point() + geom_line() + 
+  ggtitle("Experiment 3") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+#### Experiment 3: Analysis
+
+Pre-model diagnostics. Plot transformed response against groups to test for inhomogeneity in variance.
+
+```{r}
+dat_3 <- within(dat_3, {
+  groups <- interaction(Ratio, Transfer)
+  groups <- reorder(groups, plaCM_ratio, mean)
+  logitrat = logit(plaCM_ratio)
+})
+
+ggplot(data=dat_3, aes(x=groups, y=logitrat)) + 
+  geom_point() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Looks mostly good -- variance appears largely homogenous across samples/timepoint, though perhaps increased variance for those measurements with low plaCM proportion towards the end of the experiment. 
+
+Plot data with logit transform.
+
+```{r}
+ggplot(data=dat_3, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ x) +
+  ggtitle("Experiment 3") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+Again, start with a LMM.
+
+```{r}
+lmm_dat_3 <- lme(logitrat ~ transf * Ratio,
+                 random = ~1 + transf|pop, data = dat_3)
+
+plot(lmm_dat_3) # largely homogenous
+qqPlot(residuals(lmm_dat_3), envelope=0.99)
+VarCorr(lmm_dat_3)
+```
+
+Some fairly strong correlation between random effects (0.9) — populations with more PlaCM tended to lose plaCM more slowly, as can be seen in the following plot:
+
+```{r}
+ggplot(data=dat_3, aes(x=transf, y=logitrat, colour=as.factor(Replicate))) +
+  geom_hline(yintercept=-0.5, linewidth=0.2) + 
+  geom_vline(xintercept=0, linewidth=0.2) +
+  geom_point(alpha=0.6) + geom_line(aes(group=Replicate), alpha=0.6) + 
+  geom_smooth(method='lm', formula=y ~ x, alpha=0) +
+  ggtitle("Experiment 3") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+Overall, model looks appropriate. Test for significance of fixed effects.
+
+```{r}
+drop1(update(lmm_dat_3, method="ML"), test = "Chisq") %>% kable()
+```
+
+No detected interaction effect.
+
+|             | Df|       AIC|      LRT|  Pr(>Chi)|
+|:------------|--:|---------:|--------:|---------:|
+|<none>       | NA| -463.2797|       NA|        NA|
+|transf:Ratio |  3| -464.8135| 4.466257| 0.2153199|
+
+Check for main effects.
+
+```{r}
+lmm_dat_3.1 <- lme(logitrat ~ transf + Ratio, 
+                   random = ~1 + transf|pop, data = dat_3)
+                   
+drop1(update(lmm_dat_3.1, method="ML"), test = "Chisq") %>% kable()
+```
+
+Significant effects of both ratio and transfer:
+
+|       | Df|       AIC|      LRT|  Pr(>Chi)|
+|:------|--:|---------:|--------:|---------:|
+|<none> | NA| -464.8135|       NA|        NA|
+|transf |  1| -378.9176| 87.89586| 0.0000000|
+|Ratio  |  3| -460.7863| 10.02714| 0.0183368|
+
+```{r}
+summary(lmm_dat_3.1)
+```
+
+The effect of transfer is very strong, indicating the loss of plaCM from the system. The effect of ratio is much weaker, and indicates a slightly reduced intercept for the populations without significant plasmid-free.
+
+Now attempt GLMM with glmmTMB and a beta-binomial distribution, since preliminary analyses indicated overdispersion.
+
+```{r}
+glmm_dat_3 <-glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf * Ratio + (1 + transf|pop),
+                     data=dat_3, family="betabinomial")
+```
+
+Test model assumptions.
+
+```{r}
+plot(residuals(glmm_dat_3, type="p"))     
+# two outliers, but everything else looking mostly ok
+
+qqPlot(residuals(glmm_dat_3), envelope=0.99)
+
+# Check for correlation between random effects
+VarCorr(glmm_dat_3) # strong positive correlation, as above
+```
+
+Select optimal fixed effects structure.
+
+```{r}
+drop1(glmm_dat_3, test="Chisq") %>% kable()
+```
+
+Again, no significant interaction:
+
+|             | Df|      AIC|      LRT|  Pr(>Chi)|
+|:------------|--:|--------:|--------:|---------:|
+|<none>       | NA| 2465.136|       NA|        NA|
+|transf:Ratio |  3| 2464.137| 5.001105| 0.1717162|
+
+Check for main effects.
+
+```{r}
+glmm_dat_3.1 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf + Ratio + (1 + transf|pop),
+                     data=dat_3, family="betabinomial")
+                   
+drop1(update(glmm_dat_3.1), test = "Chisq") %>% kable()
+```
+
+Here, ratio is not significant (0.1 > p > 0.05), suggesting that it is not a robust finding, though the trend is similar to that reported above. 
+
+|       | Df|      AIC|       LRT|  Pr(>Chi)|
+|:------|--:|--------:|---------:|---------:|
+|<none> | NA| 2464.137|        NA|        NA|
+|transf |  1| 2550.729| 88.592073| 0.0000000|
+|Ratio  |  3| 2464.826|  6.689211| 0.0824918|
+
+```{r}
+summary(glmm_dat_3.1)
+```
+
+As with the LMM, the effect of Ratio is relatively small compared with the effect of Transfer. 
+
+### Experiment 4
+
+Load up data and plot figure:
+
+```{r}
+(df_expt4 <- df %>%
+  filter(Experiment == 2 & Treatment == "B") %>%
+  pivot_longer(starts_with("Fraction"), names_to = "Fluorescence", names_prefix = "Fraction_",
+               values_to = "Fraction") %>%
+  mutate(Population = factor(
+    case_when(Fluorescence == "Yellow" ~ "plaCM",
+              Fluorescence == "Red" ~ "pQBR57_chrCM",
+              Fluorescence == "Orange" ~ "double / clumped",
+              Fluorescence == "Blue" ~ "none"),
+    levels=c("double / clumped", "pQBR57_chrCM", "plaCM", "none")),
+         Ratio = factor(Ratio,
+                        levels=c(10, 1, 0.1, 0),
+                        labels=c("10:1", "1:1", "1:10", "none")))) %>%
+  ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
+  geom_area() + 
+  facet_grid(Replicate ~ Ratio) +
+    scale_fill_manual(
+    breaks=c("pQBR57_chrCM", "plaCM", "none", "double / clumped"),
+    values=c("#CC6677", "#44AA99", "#DDDDDD", "#000000"))
+```
+
+Plot the ratio of chrCM to plaCM, averaged over reps with SE. 
+
+```{r}
+(dat_4 <- df_expt4 %>%
+  select(-Fluorescence) %>%
+  pivot_wider(names_from="Population", values_from="Fraction") %>%
+   mutate(pop = as.factor(paste(Replicate, Ratio, sep=".")),
+          count_plaCM = round(Total_count * plaCM),
+          count_chrCM = round(Total_count * pQBR57_chrCM),
+          plaCM_ratio = count_plaCM / (count_plaCM + count_chrCM),
+          transf = scale(Transfer))) %>% head()
+
+ggplot(data=dat_4, aes(x=Transfer, y=plaCM_ratio,
+                       group=Replicate)) +
+  geom_point() + geom_line() + 
+  ggtitle("Experiment 4") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+These results might be harder to fit straight lines to, since we see some persistence/success of plaCM at high recipient levels, possibly due to the RPS dynamics described in the analytic model. 
+
+#### Experiment 4: Analysis
+
+Pre-model diagnostics. Plot transformed response against groups to test for inhomogeneity in variance.
+
+```{r}
+dat_4 <- within(dat_4, {
+  groups <- interaction(Ratio, Transfer)
+  groups <- reorder(groups, plaCM_ratio, mean)
+  logitrat = logit(plaCM_ratio)
+})
+
+ggplot(data=dat_4, aes(x=groups, y=logitrat)) + 
+  geom_point() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Looks good -- though again some increased variance for those measurements with low plaCM proportion.
+
+Plot data with logit transform.
+
+```{r}
+ggplot(data=dat_4, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ x) +
+  ggtitle("Experiment 4") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+Logit transform helps with the linearity of the 10:1 ratio experiments somewhat. However, a polynomial term is likely to improve the model.
+
+```{r}
+ggplot(data=dat_4, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ poly(x,2)) +
+  ggtitle("Experiment 4") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+
+ggplot(data=dat_4, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ poly(x,3)) +
+  ggtitle("Experiment 4") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+
+ggplot(data=dat_4, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ poly(x,4)) +
+  ggtitle("Experiment 4") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+Again, start with a LMM. Preliminary analyses indicated an extremely high correlation between random effects and very low values for the random effect on slope, so for these analyses the random effect of population on slope was excluded. 
+
+```{r}
+lmm_dat_4 <- lme(logitrat ~ transf * Ratio,
+                 random = ~1|pop, data = dat_4)
+
+lmm_dat_4_poly2 <- lme(logitrat ~ poly(transf,2, raw=TRUE) * Ratio,
+                       random = ~1|pop, data = dat_4)
+
+lmm_dat_4_poly3 <- lme(logitrat ~ poly(transf,3, raw=TRUE) * Ratio,
+                       random = ~1|pop, data = dat_4)
+
+lmm_dat_4_poly4 <- lme(logitrat ~ poly(transf,4, raw=TRUE) * Ratio,
+                       random = ~1|pop, data = dat_4)
+
+plot(lmm_dat_4) 
+plot(lmm_dat_4_poly2) 
+plot(lmm_dat_4_poly3)
+plot(lmm_dat_4_poly4)
+ # some significant outliers at low fitted values
+
+par(mfrow=c(1,4))
+qqPlot(residuals(lmm_dat_4), envelope=0.99)
+qqPlot(residuals(lmm_dat_4_poly2), envelope=0.99)
+qqPlot(residuals(lmm_dat_4_poly3), envelope=0.99)
+qqPlot(residuals(lmm_dat_4_poly4), envelope=0.99)
+# all of these show substantial divergence from expected values
+
+VarCorr(lmm_dat_4) #extremely low variance on random effects
+VarCorr(lmm_dat_4_poly2) 
+VarCorr(lmm_dat_4_poly3) 
+VarCorr(lmm_dat_4_poly4) 
+```
+
+Test for the effects of each polynomial.
+
+```{r}
+anova(update(lmm_dat_4, method="ML"), 
+      update(lmm_dat_4_poly2, method="ML"),
+      update(lmm_dat_4_poly3, method="ML"),
+      update(lmm_dat_4_poly4, method="ML"))
+```
+
+Third-degree polynomial is the best fit...
+
+```{r}
+par(mfrow=c(1,1))
+qqPlot(residuals(lmm_dat_4_poly3), envelope=0.99, col=dat_4$Ratio)
+```
+
+...though there are still lots of outliers from the 10:1 ratio treatment. 
+
+Test for significance of fixed effects.
+
+```{r}
+drop1(update(lmm_dat_4_poly3, method="ML"), 
+             test = "Chisq") %>% kable()
+```
+
+There is a significant effect of starting ratio on the loss of plaCM:
+
+|                      | Df|       AIC|      LRT| Pr(>Chi)|
+|:---------------------|--:|---------:|--------:|--------:|
+|<none>                | NA|  28.80455|       NA|       NA|
+|poly(transf, 3):Ratio |  9| 235.61572| 224.8112|        0|
+
+```{r}
+summary(lmm_dat_4_poly3)
+```
+
+The polynomial terms are larger for the base level (10:1 Ratio), indicating that the significant effect is driven by more non-linear relationships at the 10:1 ratio compared with the others.
+
+Interpretation below (after the GLMM analysis).
+
+Now attempt GLMM with glmmTMB and a beta-binomial distribution, since preliminary analyses indicated overdispersion.
+
+Again, preliminary analyses indicated issues with incorporating a random effect on slope, so this term was not included. 
+
+```{r}
+glmm_dat_4 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf * Ratio + (1|pop),
+                 data = dat_4, family="betabinomial")
+
+glmm_dat_4_poly2 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ poly(transf,2, raw=TRUE) * Ratio + (1|pop),
+                       data = dat_4, family="betabinomial")
+
+glmm_dat_4_poly3 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ poly(transf,3, raw=TRUE) * Ratio + (1|pop),
+                       data = dat_4, family="betabinomial")
+
+glmm_dat_4_poly4 <- glmmTMB(cbind(count_plaCM, count_chrCM) ~ poly(transf,4, raw=TRUE) * Ratio + (1|pop),
+                       data = dat_4, family="betabinomial")
+
+plot(residuals(glmm_dat_4), type="p")
+plot(residuals(glmm_dat_4_poly2), type="p")
+plot(residuals(glmm_dat_4_poly3), type="p")
+plot(residuals(glmm_dat_4_poly4), type="p")
+ # looks much better than the LMM
+
+par(mfrow=c(1,4))
+qqPlot(residuals(glmm_dat_4), envelope=0.99)
+qqPlot(residuals(glmm_dat_4_poly2), envelope=0.99)
+qqPlot(residuals(glmm_dat_4_poly3), envelope=0.99)
+qqPlot(residuals(glmm_dat_4_poly4), envelope=0.99)
+# again, substantial divergence from expected values at the extremes
+```
+
+Test significance of polynomial terms.
+
+```{r}
+anova(glmm_dat_4,
+      glmm_dat_4_poly2,
+      glmm_dat_4_poly3,
+      glmm_dat_4_poly4)
+```
+
+As with the LMM, the third degree polynomial is most appropriate.
+
+```{r}
+par(mfrow=c(1,1))
+qqPlot(residuals(glmm_dat_4_poly3), envelope=0.99, col=dat_4$Ratio)
+```
+
+Looks better than the LMM, though still some divergence.
+
+Select optimal fixed effects structure.
+
+```{r}
+drop1(glmm_dat_4_poly3, test="Chisq") %>% kable()
+```
+
+Again, we detect the significant effect of Ratio on the shape of the slope
+
+|                      | Df|      AIC|      LRT| Pr(>Chi)|
+|:---------------------|--:|--------:|--------:|--------:|
+|<none>                | NA| 2804.723|       NA|       NA|
+|poly(transf, 3):Ratio |  9| 3074.079| 287.3561|        0|
+
+```{r}
+summary(glmm_dat_4_poly3)
+```
+
+As with the LMM, we see steeper loss of plaCM when there are numerous recipients, and the effect size is relatively large (the first-order polynomial term is strongly negative for the 10:1 ratio, and ameliorated with all of the others). However it's important to note that there appears to be a levelling-out at around 0.04, as fitted by the polynomial term in the model (the second and third-degree polynomial terms are ameliorated at the other ratios). Again, the results here are driven by an increased persistence of plaCM under conditions where there are fewer plasmid-free competitors. 
+
+Pulling this together with the results from Experiment 3.
+
+- PlaCM is outcompeted by ChrCM regardless of recipient availability. 
+- PlaCM is outcompeted by wild-type pQBR57 from ChrCM. This effect is slightly mitigated when there are few/no plasmid-free cells to conjugate into, but the ultimate fate is the same. 
+- The fact that wild-type pQBR57 from ChrCM is more effective at displacing plaCM in the presence of recipients is consistent with the results from Experiment 5.
+
+### Experiment 5
+
+Load up data and plot figure:
+
+```{r}
+(df_expt5 <- df %>%
+  filter(Experiment == 2 & Treatment == "C") %>%
+  pivot_longer(starts_with("Fraction"), names_to = "Fluorescence", names_prefix = "Fraction_",
+               values_to = "Fraction") %>%
+  mutate(Population = factor(
+    case_when(Fluorescence == "Yellow" ~ "plaCM",
+              Fluorescence == "Red" ~ "pQBR57",
+              Fluorescence == "Orange" ~ "double / clumped",
+              Fluorescence == "Blue" ~ "none"),
+    levels=c("double / clumped", "pQBR57", "plaCM", "none")),
+         Ratio = factor(Ratio,
+                        levels=c(10, 1, 0.1, 0),
+                        labels=c("10:1", "1:1", "1:10", "none")))) %>%
+  ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
+  geom_area() + 
+  facet_grid(Replicate ~ Ratio) +
+    scale_fill_manual(
+    breaks=c("pQBR57", "plaCM", "none", "double / clumped"),
+    values=c("#DDCC77", "#44AA99", "#DDDDDD", "#000000"))
+```
+
+Plot the ratio of chrCM to plaCM, averaged over reps with SE. 
+
+```{r}
+(dat_5 <- df_expt5 %>%
+  select(-Fluorescence) %>%
+  pivot_wider(names_from="Population", values_from="Fraction") %>%
+   mutate(pop = as.factor(paste(Replicate, Ratio, sep=".")),
+          count_plaCM = round(Total_count * plaCM),
+          count_pQBR57 = round(Total_count * pQBR57),
+          plaCM_ratio = count_plaCM / (count_plaCM + count_pQBR57),
+          transf = scale(Transfer))) %>% head()
+
+ggplot(data=dat_5, aes(x=Transfer, y=plaCM_ratio,
+                       group=Replicate)) +
+  geom_point() + geom_line() + 
+  ggtitle("Experiment 5") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+It is really not possible to fit straight lines to these plots due to the RPS dynamics, and so polynomial terms are required.
+
+#### Experiment 5: Analysis
+
+Pre-model diagnostics. Plot transformed response against groups to test for inhomogeneity in variance.
+
+```{r}
+dat_5 <- within(dat_5, {
+  groups <- interaction(Ratio, Transfer)
+  groups <- reorder(groups, plaCM_ratio, mean)
+  logitrat = logit(plaCM_ratio)
+})
+
+ggplot(data=dat_5, aes(x=groups, y=logitrat)) + 
+  geom_point() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Looks good -- though again some increased variance for those measurements with low plaCM proportion, and one higher-variance outlier at the later timepoint at the 1:10 ratio.
+
+Plot data with logit transform.
+
+```{r}
+ggplot(data=dat_5, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ x) +
+  ggtitle("Experiment 5") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+Straight lines are not very helpful with some of these treatments.
+
+Third- or fourth-degree polynomial may help.
+
+```{r}
+ggplot(data=dat_5, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ poly(x, 2)) +
+  ggtitle("Experiment 5") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+
+ggplot(data=dat_5, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ poly(x, 3)) +
+  ggtitle("Experiment 5") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+
+ggplot(data=dat_5, aes(x=Transfer, y=logitrat)) +
+  geom_point(alpha=0.4) + geom_line(aes(group=Replicate), alpha=0.4) + 
+  geom_smooth(method='lm', formula=y ~ poly(x, 4)) +
+  ggtitle("Experiment 5") +
+  facet_grid(.~Ratio) + theme(legend.position="bottom")
+```
+
+Again, start with a LMM. Preliminary analyses indicated issues with the random effect on slope (low variance, high correlation) so this was not included. 
+
+```{r}
+lmm_dat_5 <- lme(logitrat ~ transf * Ratio,
+                 random = ~1|pop, data = dat_5)
+lmm_dat_5_poly2 <- lme(logitrat ~ poly(transf,2, raw=TRUE) * Ratio,
+                 random = ~1|pop, data = dat_5)
+lmm_dat_5_poly3 <- lme(logitrat ~ poly(transf,3, raw=TRUE) * Ratio,
+                 random = ~1|pop, data = dat_5)
+lmm_dat_5_poly4 <- lme(logitrat ~ poly(transf,4, raw=TRUE) * Ratio,
+                 random = ~1|pop, data = dat_5)
+
+plot(lmm_dat_5) 
+plot(lmm_dat_5_poly2) 
+plot(lmm_dat_5_poly3) 
+plot(lmm_dat_5_poly4)
+ # problems with heteroscedasticity at lower fitted values
+
+qqPlot(residuals(lmm_dat_5), envelope=0.99)
+qqPlot(residuals(lmm_dat_5_poly2), envelope=0.99)
+qqPlot(residuals(lmm_dat_5_poly3), envelope=0.99)
+qqPlot(residuals(lmm_dat_5_poly4), envelope=0.99)
+# again poor fit at the extremes
+
+VarCorr(lmm_dat_5) 
+VarCorr(lmm_dat_5_poly2) 
+VarCorr(lmm_dat_5_poly3) 
+VarCorr(lmm_dat_5_poly4) 
+```
+
+Comparison of models.
+
+```{r}
+anova(update(lmm_dat_5, method="ML"), 
+      update(lmm_dat_5_poly2, method="ML"),
+      update(lmm_dat_5_poly3, method="ML"),
+      update(lmm_dat_5_poly4, method="ML"))
+```
+
+The fourth-degree polynomial term does actually help improve the model here. 
+
+Test for significance of fixed effects. Preliminary analyses suggested I needed to change the optimiser function, due to lack of convergence. 
+
+```{r}
+drop1(update(lmm_dat_5_poly4, method="ML"), 
+             test = "Chisq") %>% kable()
+```
+
+There is a significant interaction term, indicating the the shape of the response varies with starting ratio.
+
+|                      | Df|      AIC|      LRT| Pr(>Chi)|
+|:---------------------|--:|--------:|--------:|--------:|
+|<none>                | NA| 279.0007|       NA|       NA|
+|poly(transf, 4):Ratio | 12| 682.7010| 427.7003|        0|
+
+```{r}
+summary(lmm_dat_5_poly4)
+```
+
+The results here are driven by an increased persistence of plaCM under conditions where there are fewer plasmid-free competitors. 
+
+Now attempt GLMM with glmmTMB and a beta-binomial distribution, since preliminary analyses indicated overdispersion. Again, do not include random effect on slope, due to preliminary analyses indicating a high degree of correlation and poor model convergence.
+
+```{r}
+glmm_dat_5 <- glmmTMB(cbind(count_plaCM, count_pQBR57) ~ transf * Ratio + (1|pop),
+                 data = dat_5, family="betabinomial")
+
+glmm_dat_5_poly2 <- glmmTMB(cbind(count_plaCM, count_pQBR57) ~ poly(transf,2,raw=TRUE) * Ratio + (1|pop),
+                       data = dat_5, family="betabinomial")
+
+glmm_dat_5_poly3 <- glmmTMB(cbind(count_plaCM, count_pQBR57) ~ poly(transf,3,raw=TRUE) * Ratio + (1|pop),
+                       data = dat_5, family="betabinomial")
+
+glmm_dat_5_poly4 <- glmmTMB(cbind(count_plaCM, count_pQBR57) ~ poly(transf,4,raw=TRUE) * Ratio + (1|pop),
+                       data = dat_5, family="betabinomial")
+
+plot(residuals(glmm_dat_5), type="p")
+plot(residuals(glmm_dat_5_poly2), type="p")
+plot(residuals(glmm_dat_5_poly3), type="p")
+plot(residuals(glmm_dat_5_poly4), type="p")
+ # looks much better than the LMM
+
+par(mfrow=c(1,4))
+qqPlot(residuals(glmm_dat_5), envelope=0.99)
+qqPlot(residuals(glmm_dat_5_poly2), envelope=0.99)
+qqPlot(residuals(glmm_dat_5_poly3), envelope=0.99)
+qqPlot(residuals(glmm_dat_5_poly4), envelope=0.99)
+# again, substantial divergence from expected values at the extremes
+```
+
+Select best polynomial structure.
+
+```{r}
+anova(glmm_dat_5, glmm_dat_5_poly2, glmm_dat_5_poly3, glmm_dat_5_poly4)
+```
+
+Again, the fourth-degree polynomial term helps explain patterns significantly.
+
+Select optimal fixed effects structure.
+
+```{r}
+drop1(glmm_dat_5_poly4, test="Chisq") %>% kable()
+```
+
+Again, we detect the significant effect of Ratio on the slope:
+
+|                                  | Df|      AIC|      LRT| Pr(>Chi)|
+|:---------------------------------|--:|--------:|--------:|--------:|
+|<none>                            | NA| 3057.944|       NA|       NA|
+|poly(transf, 4, raw = TRUE):Ratio | 12| 3448.329| 414.3848|        0|
+
+```{r}
+summary(glmm_dat_5_poly4)
+```
+
+As with the LMM, we see changes in the dynamic over time when there are more opportunities for conjugation. The fourth-degree polynomial controls the steepness to the first peak, which is significantly reduced between the 10:1 and 1:1 treatments. 
+
+## Analysis of plaCM/chrCM fitness experiment 
+
+Load up data and generate overview plot.
+
+```{r}
+dat_6 <- read.csv("data/relativefitness_data.txt", header=TRUE, sep=" ") %>% 
+  mutate(chr = ifelse(host == "SBW25d4242", "SBW25::chrCM", host),
+         pla = ifelse(plasmid == "pQBR57d0059", "pQBR57::plaCM", plasmid),
+         ref_chr = ifelse(reference_host == "SBW25d4242", "SBW25::chrCM", reference_host),
+         ref_pla = ifelse(reference_plasmid == "pQBR57d0059", "pQBR57::plaCM", reference_plasmid),
+         ref = paste(ref_chr, "(", ref_pla, ")", sep=""),
+         tst = paste(chr, "(", pla, ")", sep=""),
+         selection = factor(mercury))
+
+ggplot(data = dat_6, aes(x=tst, y=RF_r, colour=selection)) + 
+  geom_boxplot() +
+  geom_point(position="jitter") +
+  facet_grid(.~ref) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+```
+
+Produce alternative data frame correcting for test/reference combinations, and produce the figure for the paper.
+
+```{r}
+dat_6_ext <- dat_6 %>% 
+  mutate(reference = ifelse(ttmt %in% c("3B","4B","4C"), tst, ref),
+         test      = ifelse(ttmt %in% c("3B","4B","4C"), ref, tst),
+         relative_fitness = ifelse(ttmt %in% c("3B","4B","4C"), 0-RF_r, RF_r)) %>%
+  bind_rows(filter(dat_6, ttmt=="3B") %>% 
+              mutate(reference = ref, test = tst, relative_fitness = RF_r)) %>%
+  mutate(reference = factor(reference, levels=c("SBW25(pQBR57)","SBW25::chrCM(pQBR57)",
+                              "SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
+
+dat_6_summ <- dat_6_ext %>% filter(ttmt %in% c("2A","3A","3B","4B","4C")) %>%
+  group_by(reference, test, selection) %>%
+  summarise(mean = mean(relative_fitness), 
+            n = n(), 
+            se = sd(relative_fitness)/sqrt(n), 
+            ci = (qt(0.95/2 + 0.5, n-1)) * se) %>%
+  rename(relative_fitness=mean)
+
+annot <- data.frame(reference = "SBW25::chrCM(pQBR57)",
+                    test = "SBW25(pQBR57::plaCM)",
+                    selection = "0",
+                    relative_fitness = 1,
+                    label="*")
+
+pd <- position_dodge(width=0.4)
+ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")), 
+       aes(x=reference, y=relative_fitness, colour=selection)) + 
+  geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
+  geom_point(position = pd, alpha=0.4, shape=16) +
+  geom_point(data=dat_6_summ, shape=1, position=pd, size=2) + 
+  labs(y = "relative fitness (r) of test strain") + 
+  facet_grid(.~test, scales="free_x") +
+  geom_text(data = annot, aes(label=label), colour="black", size=5) +
+  scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8))
+```
+
+#### Analysis
+
+Analyse the data shown in the figure. Each panel should be analysed separately to make the model balanced, and remove the data presented twice. Linear model with relative fitness as response, and test, reference, selection, and their three-way interaction as independent variables.
+
+```{r}
+lm_6_l <- lm(relative_fitness ~ reference * selection,
+             data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+                           reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
+
+lm_6_r <- lm(relative_fitness ~ reference * selection,
+             data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+                           reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
+
+par(mfrow=c(2,2))
+plot(lm_6_l)
+plot(lm_6_r)
+```
+
+Acceptable fit, seems to meet all assumptions of linear model.
+
+```{r}
+dat_6_ext <- within(dat_6_ext, {
+  groups <- interaction(tst,ref,selection)
+  groups <- reorder(groups, relative_fitness, mean)
+})
+
+library(car)
+bartlett.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+                           reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
+fligner.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+                           reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
+leveneTest(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+                           reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
+shapiro.test(resid(lm_6_l))
+
+bartlett.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+                           reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
+fligner.test(relative_fitness ~ groups,  data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+                           reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
+leveneTest(relative_fitness ~ groups,    data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+                           reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
+shapiro.test(resid(lm_6_r))
+```
+
+Tests show no significant deviation from assumptions.
+
+```{r}
+anova(lm_6_l)
+```
+
+Significant interaction, i.e. selection has a different effect depending on the reference.
+
+
+```{r}
+library(emmeans)
+
+posthoc_l_s <- lsmeans(lm_6_l, pairwise ~ (selection|reference), adjust="none")
+posthoc_l_r <- lsmeans(lm_6_l, pairwise ~ (reference|selection), adjust="none")
+contr_l <- data.frame(posthoc_l_s$contrasts) %>% 
+  bind_rows(data.frame(posthoc_l_r$contrasts)) %>%
+  mutate(p.adjust = p.adjust(p.value, method="bonferroni"),
+         sign = ifelse(p.value<0.05, "*", ""))
+kable(contr_l)
+```
+
+Significant effects of mercury for all comparisons except chrCM vs double-compensated. Significant differences between all modes of compensation, both with and without mercury.
+
+Compare all measurements against 0.
+
+```{r}
+(posthoc_l_0 <- filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+                           reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")) %>%
+  select(reference, test, selection, relative_fitness) %>%
+  group_by(reference, test, selection) %>% 
+  summarise(values = list(relative_fitness),
+            coef = t.test(unlist(values), mu = 0)$estimate,
+            df = t.test(unlist(values), mu = 0)$parameter,
+            t_value = t.test(unlist(values), mu = 0)$statistic,
+            p_value = t.test(unlist(values), mu = 0)$p.value) %>%
+  select(-values) %>%
+  mutate(p_adj = p.adjust(p_value, method="bonferroni"))) %>% kable()
+```
+
+After Bonferroni adjustment, chrCM is significantly fitter than all comparisons except for the double-compensated strain. 
+
+For the right-hand panel:
+
+```{r}
+anova(lm_6_r)
+```
+
+Again significant interaction.
+
+```{r}
+posthoc_r_s <- lsmeans(lm_6_r, pairwise ~ (selection|reference), adjust="none")
+posthoc_r_r <- lsmeans(lm_6_r, pairwise ~ (reference|selection), adjust="none")
+contr_r <- data.frame(posthoc_r_s$contrasts) %>% 
+  bind_rows(data.frame(posthoc_r_r$contrasts)) %>%
+  mutate(p.adjust = p.adjust(p.value, method="bonferroni"),
+         sign = ifelse(p.value<0.05, "*", ""))
+kable(contr_r)
+```
+
+Significant effects of mercury for all comparisons. Significant differences between each mode of compensation, both with and without mercury.
+
+```{r}
+(posthoc_r_0 <- filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+                           reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")) %>%
+  select(reference, test, selection, relative_fitness) %>%
+  group_by(reference, test, selection) %>% 
+  summarise(values = list(relative_fitness),
+            coef = t.test(unlist(values), mu = 0)$estimate,
+            df = t.test(unlist(values), mu = 0)$parameter,
+            t_value = t.test(unlist(values), mu = 0)$statistic,
+            p_value = t.test(unlist(values), mu = 0)$p.value) %>%
+  select(-values) %>%
+  mutate(p_adj = p.adjust(p_value, method="bonferroni"))) %>% kable()
+```
+
+After Bonferroni adjustment, plaCM is significantly fitter than uncompensated, but significantly less fit than the double-compensated.
+
+---
+
+**[Back to index.](../README.md)**
