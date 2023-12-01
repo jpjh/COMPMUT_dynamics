@@ -5,6 +5,8 @@ compiled November 2023
 
 ### Read in and pre-process data
 
+Plots for the dynamics experiments.
+
 Read in data frame.
 
 ``` r

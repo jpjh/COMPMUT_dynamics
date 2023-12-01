@@ -314,8 +314,8 @@ library(glmmTMB)
 ```
 
     ## Warning in checkDepPackageVersion(dep_pkg = "TMB"): Package version inconsistency detected.
-    ## glmmTMB was built with TMB version 1.9.6
-    ## Current TMB version is 1.9.7
+    ## glmmTMB was built with TMB version 1.9.3
+    ## Current TMB version is 1.9.4
     ## Please re-install glmmTMB from source or restore original 'TMB' package (see '?reinstalling' for more information)
 
 ``` r
@@ -339,7 +339,7 @@ summary(glmm_dat_1)
     ## Conditional model:
     ##  Groups Name        Variance Std.Dev. Corr 
     ##  pop    (Intercept) 0.027655 0.16630       
-    ##         transf      0.004367 0.06608  0.61 
+    ##         transf      0.004366 0.06608  0.61 
     ## Number of obs: 360, groups:  pop, 40
     ## 
     ## Dispersion parameter for betabinomial family ():  872 
@@ -347,13 +347,13 @@ summary(glmm_dat_1)
     ## Conditional model:
     ##                                          Estimate Std. Error z value Pr(>|z|)
     ## (Intercept)                             -0.399370   0.047089  -8.481  < 2e-16
-    ## transf                                  -0.311760   0.022878 -13.627  < 2e-16
-    ## SelectionYes                            -0.950352   0.055823 -17.024  < 2e-16
-    ## MarkersYellow / Red                      0.009861   0.066114   0.149    0.881
-    ## transf:SelectionYes                     -0.538432   0.034026 -15.824  < 2e-16
-    ## transf:MarkersYellow / Red               0.205138   0.031897   6.431 1.26e-10
-    ## SelectionYes:MarkersYellow / Red         0.003932   0.077194   0.051    0.959
-    ## transf:SelectionYes:MarkersYellow / Red  0.012991   0.046891   0.277    0.782
+    ## transf                                  -0.311759   0.022878 -13.627  < 2e-16
+    ## SelectionYes                            -0.950353   0.055823 -17.024  < 2e-16
+    ## MarkersYellow / Red                      0.009862   0.066114   0.149    0.881
+    ## transf:SelectionYes                     -0.538433   0.034026 -15.824  < 2e-16
+    ## transf:MarkersYellow / Red               0.205137   0.031897   6.431 1.27e-10
+    ## SelectionYes:MarkersYellow / Red         0.003932   0.077193   0.051    0.959
+    ## transf:SelectionYes:MarkersYellow / Red  0.012993   0.046890   0.277    0.782
     ##                                            
     ## (Intercept)                             ***
     ## transf                                  ***
@@ -395,8 +395,8 @@ VarCorr(glmm_dat_1) # moderate correlation (0.6)
     ## 
     ## Conditional model:
     ##  Groups Name        Std.Dev. Corr  
-    ##  pop    (Intercept) 0.16630        
-    ##         transf      0.06608  0.606
+    ##  pop    (Intercept) 0.166298       
+    ##         transf      0.066079 0.606
 
 Looks mostly ok, though some outliers in qqPlot from transfer 0.
 
@@ -810,7 +810,7 @@ summary(glmm_dat_2)
     ##                                          Estimate Std. Error z value Pr(>|z|)
     ## (Intercept)                             -0.379975   0.052323  -7.262 3.81e-13
     ## transf                                  -0.302990   0.023321 -12.992  < 2e-16
-    ## SelectionYes                            -0.864976   0.059113 -14.633  < 2e-16
+    ## SelectionYes                            -0.864975   0.059113 -14.633  < 2e-16
     ## MarkersYellow / Red                     -0.067152   0.073088  -0.919    0.358
     ## transf:SelectionYes                     -0.527207   0.034975 -15.074  < 2e-16
     ## transf:MarkersYellow / Red               0.142160   0.032253   4.408 1.04e-05
@@ -1177,7 +1177,7 @@ summary(lmm_dat_3.1)
     ## Fixed effects:  logitrat ~ transf + Ratio 
     ##                  Value  Std.Error  DF    t-value p-value
     ## (Intercept) -0.4314986 0.01938222 191 -22.262599  0.0000
-    ## transf      -0.3464856 0.01172748 191 -29.544774  0.0000
+    ## transf      -0.3464856 0.01172748 191 -29.544773  0.0000
     ## Ratio1:1    -0.0607690 0.02309420  20  -2.631351  0.0160
     ## Ratio1:10   -0.0732385 0.02309420  20  -3.171293  0.0048
     ## Rationone   -0.0545826 0.02309420  20  -2.363477  0.0283
@@ -1189,8 +1189,8 @@ summary(lmm_dat_3.1)
     ## Rationone -0.596  0.000  0.500  0.500
     ## 
     ## Standardized Within-Group Residuals:
-    ##          Min           Q1          Med           Q3          Max 
-    ## -2.277381080 -0.604777408  0.009321518  0.575429481  3.391335922 
+    ##         Min          Q1         Med          Q3         Max 
+    ## -2.27738107 -0.60477741  0.00932152  0.57542948  3.39133592 
     ## 
     ## Number of Observations: 216
     ## Number of Groups: 24
@@ -1529,7 +1529,7 @@ VarCorr(lmm_dat_4) #extremely low variance on random effects
 
     ## pop = pdLogChol(1) 
     ##             Variance     StdDev      
-    ## (Intercept) 2.962306e-10 1.721135e-05
+    ## (Intercept) 2.962411e-10 1.721165e-05
     ## Residual    1.066754e-01 3.266120e-01
 
 ``` r
@@ -1761,7 +1761,7 @@ summary(lmm_dat_4_poly3)
     ## 
     ## Standardized Within-Group Residuals:
     ##         Min          Q1         Med          Q3         Max 
-    ## -4.77980074 -0.30949988 -0.03173836  0.25636455  4.65350891 
+    ## -4.77980073 -0.30949988 -0.03173836  0.25636455  4.65350891 
     ## 
     ## Number of Observations: 216
     ## Number of Groups: 24
@@ -1929,22 +1929,22 @@ summary(glmm_dat_4_poly3)
     ## 
     ## Conditional model:
     ##                                        Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)                            -2.23957    0.05270  -42.49  < 2e-16 ***
+    ## (Intercept)                            -2.23958    0.05270  -42.49  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)1           -1.99489    0.08260  -24.15  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)2            0.32673    0.03547    9.21  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)3            0.42943    0.04152   10.34  < 2e-16 ***
-    ## Ratio1:1                                1.18056    0.06441   18.33  < 2e-16 ***
-    ## Ratio1:10                               1.23696    0.06374   19.41  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)3            0.42944    0.04152   10.34  < 2e-16 ***
+    ## Ratio1:1                                1.18057    0.06441   18.33  < 2e-16 ***
+    ## Ratio1:10                               1.23697    0.06374   19.41  < 2e-16 ***
     ## Rationone                               1.30906    0.06339   20.65  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)1:Ratio1:1   1.28898    0.09959   12.94  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)2:Ratio1:1  -0.40499    0.04470   -9.06  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)1:Ratio1:1   1.28899    0.09959   12.94  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)2:Ratio1:1  -0.40500    0.04470   -9.06  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)3:Ratio1:1  -0.48161    0.05162   -9.33  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)1:Ratio1:10  1.30737    0.09792   13.35  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)2:Ratio1:10 -0.27789    0.04282   -6.49 8.64e-11 ***
+    ## poly(transf, 3, raw = TRUE)1:Ratio1:10  1.30737    0.09793   13.35  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)2:Ratio1:10 -0.27789    0.04282   -6.49 8.63e-11 ***
     ## poly(transf, 3, raw = TRUE)3:Ratio1:10 -0.40051    0.05015   -7.99 1.38e-15 ***
     ## poly(transf, 3, raw = TRUE)1:Rationone  1.39730    0.09730   14.36  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)2:Rationone -0.27337    0.04230   -6.46 1.03e-10 ***
-    ## poly(transf, 3, raw = TRUE)3:Rationone -0.40885    0.04965   -8.23  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)2:Rationone -0.27338    0.04230   -6.46 1.03e-10 ***
+    ## poly(transf, 3, raw = TRUE)3:Rationone -0.40886    0.04965   -8.23  < 2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -2185,7 +2185,7 @@ VarCorr(lmm_dat_5)
 
     ## pop = pdLogChol(1) 
     ##             Variance     StdDev      
-    ## (Intercept) 2.091318e-09 4.573093e-05
+    ## (Intercept) 2.091314e-09 4.573089e-05
     ## Residual    3.291991e-01 5.737587e-01
 
 ``` r
@@ -2631,25 +2631,25 @@ summary(glmm_dat_5_poly4)
     ## Conditional model:
     ##                                        Estimate Std. Error z value Pr(>|z|)    
     ## (Intercept)                            -0.92370    0.10022  -9.217  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)1           -2.33357    0.16805 -13.886  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2           -0.32322    0.25928  -1.247 0.212542    
-    ## poly(transf, 4, raw = TRUE)3            0.57899    0.08718   6.641 3.12e-11 ***
-    ## poly(transf, 4, raw = TRUE)4            0.04817    0.10575   0.455 0.648758    
-    ## Ratio1:1                                1.62492    0.13626  11.925  < 2e-16 ***
-    ## Ratio1:10                               2.55243    0.15007  17.008  < 2e-16 ***
-    ## Rationone                               2.56307    0.15040  17.042  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)1:Ratio1:1   0.99064    0.20655   4.796 1.62e-06 ***
-    ## poly(transf, 4, raw = TRUE)2:Ratio1:1  -1.11731    0.33130  -3.373 0.000745 ***
-    ## poly(transf, 4, raw = TRUE)3:Ratio1:1  -0.14087    0.10697  -1.317 0.187853    
-    ## poly(transf, 4, raw = TRUE)4:Ratio1:1   0.36703    0.13318   2.756 0.005852 ** 
-    ## poly(transf, 4, raw = TRUE)1:Ratio1:10  3.28346    0.22611  14.521  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2:Ratio1:10  0.20079    0.35728   0.562 0.574124    
-    ## poly(transf, 4, raw = TRUE)3:Ratio1:10 -0.69994    0.11685  -5.990 2.10e-09 ***
-    ## poly(transf, 4, raw = TRUE)4:Ratio1:10 -0.08993    0.14331  -0.628 0.530321    
-    ## poly(transf, 4, raw = TRUE)1:Rationone  3.35747    0.23217  14.461  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2:Rationone  0.15853    0.36336   0.436 0.662621    
-    ## poly(transf, 4, raw = TRUE)3:Rationone -0.59782    0.12363  -4.835 1.33e-06 ***
-    ## poly(transf, 4, raw = TRUE)4:Rationone  0.01112    0.14767   0.075 0.939964    
+    ## poly(transf, 4, raw = TRUE)1           -2.33356    0.16805 -13.886  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2           -0.32324    0.25928  -1.247 0.212519    
+    ## poly(transf, 4, raw = TRUE)3            0.57899    0.08719   6.641 3.12e-11 ***
+    ## poly(transf, 4, raw = TRUE)4            0.04817    0.10575   0.456 0.648722    
+    ## Ratio1:1                                1.62491    0.13626  11.925  < 2e-16 ***
+    ## Ratio1:10                               2.55242    0.15007  17.008  < 2e-16 ***
+    ## Rationone                               2.56306    0.15040  17.042  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)1:Ratio1:1   0.99063    0.20655   4.796 1.62e-06 ***
+    ## poly(transf, 4, raw = TRUE)2:Ratio1:1  -1.11728    0.33130  -3.372 0.000745 ***
+    ## poly(transf, 4, raw = TRUE)3:Ratio1:1  -0.14087    0.10697  -1.317 0.187877    
+    ## poly(transf, 4, raw = TRUE)4:Ratio1:1   0.36702    0.13318   2.756 0.005853 ** 
+    ## poly(transf, 4, raw = TRUE)1:Ratio1:10  3.28345    0.22611  14.521  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2:Ratio1:10  0.20082    0.35728   0.562 0.574064    
+    ## poly(transf, 4, raw = TRUE)3:Ratio1:10 -0.69993    0.11685  -5.990 2.10e-09 ***
+    ## poly(transf, 4, raw = TRUE)4:Ratio1:10 -0.08994    0.14331  -0.628 0.530281    
+    ## poly(transf, 4, raw = TRUE)1:Rationone  3.35745    0.23217  14.461  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2:Rationone  0.15855    0.36336   0.436 0.662581    
+    ## poly(transf, 4, raw = TRUE)3:Rationone -0.59781    0.12363  -4.835 1.33e-06 ***
+    ## poly(transf, 4, raw = TRUE)4:Rationone  0.01111    0.14767   0.075 0.940002    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -2714,7 +2714,7 @@ annot <- data.frame(reference = "SBW25::chrCM(pQBR57)",
                     label="*")
 
 pd <- position_dodge(width=0.4)
-ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")), 
+(p6 <- ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")), 
        aes(x=reference, y=relative_fitness, colour=selection)) + 
   geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
   geom_point(position = pd, alpha=0.4, shape=16) +
@@ -2724,10 +2724,21 @@ ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")),
   geom_text(data = annot, aes(label=label), colour="black", size=5) +
   scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
-  theme(legend.position=c(0.9,0.8))
+  theme(legend.position=c(0.9,0.8)))
 ```
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->
+
+``` r
+png("./figs/p6.png", width=3.2, height=3.6, units="in", res=300)
+p6 + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8))
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
 
 #### Analysis
 
@@ -2995,6 +3006,132 @@ mercury.
 
 After Bonferroni adjustment, plaCM is significantly fitter than
 uncompensated, but significantly less fit than the double-compensated.
+
+### Conjugation experiments
+
+Short (4h) conjugation experiments were run using strains that were in
+the exponential phase of growth.
+
+``` r
+counts <- read.csv("./data/conjugation_data.csv", header=TRUE, sep=",") %>% filter(crop != "x") %>%
+  select(!(c(notes, crop))) %>%
+  mutate(white = (1000/spread) * (10^dilution) * count_white,
+         blue = (1000/spread) * (10^dilution) * count_blue)
+
+dat_7 <- left_join(
+    counts %>% filter(time_h==0 & media == "kb"),
+    counts %>% filter(time_h==4 & media == "kb"),
+    by=c("strain", "rep"),
+    suffix=c(".start",".end")
+    ) %>% 
+  select(strain, rep, white.start, blue.start, white.end, blue.end) %>%
+  rename(R.0 = white.start, D.0 = blue.start, R.t = white.end, D.t = blue.end) %>%
+  left_join(
+    counts %>% filter(time_h==4 & media != "kb") %>% select("strain","rep","white"),
+    by=c("strain", "rep")
+  ) %>%
+  rename(T.t = white) %>%
+  mutate(psi.R = log(R.t/R.0)/4,
+         psi.D = log(D.t/D.0)/4,
+         psi.T = psi.D, 
+         gamma = (psi.D + psi.R - psi.T) * (T.t / ((D.t * R.t) - (D.0 * R.0 * exp(psi.T * 4)))))
+```
+
+Can output for analysis using the [online Shiny
+app](https://ibz-shiny.ethz.ch/jhuisman/conjugator/) for
+cross-validation.
+
+``` r
+# output for analysis with Conjugator
+
+dat_7 %>% mutate(ID = paste(strain, rep, sep = "."), T.0 = 0, t = 4) %>% 
+  select(ID, psi.D, psi.R, psi.T, D.0, R.0, T.0, D.t, R.t, T.t, t) %>% 
+  write.csv(file = "./data/output_for_conjugator.csv", row.names = FALSE)
+```
+
+Plot:
+
+``` r
+dat_7_summ <- dat_7 %>%
+  group_by(strain) %>%
+  summarise(gamma = mean(gamma))
+
+pd <- position_dodge(width = 0.2)
+
+(p7 <- ggplot(data = dat_7, aes(x = factor(strain, levels=c("pQ57","delta_59")), y = log10(gamma))) +
+    geom_hline(yintercept=-11.34, linetype="dotted", linewidth=0.5) +
+  geom_point(position=pd, aes(group=rep), alpha=0.4, shape=16) +
+    geom_point(data=dat_7_summ, shape=1, size=2) +
+  scale_y_continuous(limits=c(-15,-10), breaks=seq(-15,-10,by=1), name=expression(paste("log"[10], "(\u03B3)"))) +
+  scale_x_discrete(labels=c("pQBR57", "pQBR57::plaCM"), name="donor")) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+```
+
+![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-82-1.png)<!-- -->
+
+``` r
+png("./figs/p7.png", width=1.8, height=2.2, units="in", res=300)
+p7 + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+Statistics:
+
+``` r
+dat_7 <- dat_7 %>% mutate(log10_gamma = log10(gamma))
+
+t.test(log10_gamma ~ strain, data=dat_7)
+```
+
+    ## 
+    ##  Welch Two Sample t-test
+    ## 
+    ## data:  log10_gamma by strain
+    ## t = 0.075085, df = 9.8597, p-value = 0.9416
+    ## alternative hypothesis: true difference in means between group delta_59 and group pQ57 is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.4558745  0.4876072
+    ## sample estimates:
+    ## mean in group delta_59     mean in group pQ57 
+    ##              -11.53879              -11.55465
+
+No significant difference detected by t.test.
+
+Perform equivalence test.
+
+``` r
+library(TOSTER)
+
+t_TOST(log10_gamma ~ strain, eqb = 0.5,
+       data=dat_7)
+```
+
+    ## 
+    ## Welch Two Sample t-test
+    ## 
+    ## The equivalence test was significant, t(9.86) = -2.3, p = 0.02
+    ## The null hypothesis test was non-significant, t(9.86) = 0.075p = 0.94
+    ## NHST: don't reject null significance hypothesis that the effect is equal to zero 
+    ## TOST: reject null equivalence hypothesis
+    ## 
+    ## TOST Results 
+    ##                   t   df p.value
+    ## t-test      0.07509 9.86   0.942
+    ## TOST Lower  2.44126 9.86   0.018
+    ## TOST Upper -2.29109 9.86   0.023
+    ## 
+    ## Effect Sizes 
+    ##                Estimate     SE              C.I. Conf. Level
+    ## Raw             0.01587 0.2113 [-0.3677, 0.3994]         0.9
+    ## Hedges's g(av)  0.03995 0.6471 [-0.8364, 0.9143]         0.9
+    ## Note: SMD confidence intervals are an approximation. See vignette("SMD_calcs").
+
+Equivalence test significant, indicating that the values are not
+different at significance level p = 0.02 to +/- 0.5 units.
 
 ------------------------------------------------------------------------
 

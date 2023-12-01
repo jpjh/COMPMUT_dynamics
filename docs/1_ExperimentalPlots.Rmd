@@ -25,6 +25,8 @@ theme_set(theme_github())
 
 ### Read in and pre-process data
 
+Plots for the dynamics experiments.
+
 Read in data frame.
 
 ```{r}

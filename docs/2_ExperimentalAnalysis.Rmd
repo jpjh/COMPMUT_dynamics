@@ -1116,7 +1116,7 @@ annot <- data.frame(reference = "SBW25::chrCM(pQBR57)",
                     label="*")
 
 pd <- position_dodge(width=0.4)
-ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")), 
+(p6 <- ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")), 
        aes(x=reference, y=relative_fitness, colour=selection)) + 
   geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
   geom_point(position = pd, alpha=0.4, shape=16) +
@@ -1126,7 +1126,13 @@ ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")),
   geom_text(data = annot, aes(label=label), colour="black", size=5) +
   scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8)))
+
+png("./figs/p6.png", width=3.2, height=3.6, units="in", res=300)
+p6 + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
   theme(legend.position=c(0.9,0.8))
+dev.off()
 ```
 
 #### Analysis
@@ -1249,6 +1255,90 @@ Significant effects of mercury for all comparisons. Significant differences betw
 ```
 
 After Bonferroni adjustment, plaCM is significantly fitter than uncompensated, but significantly less fit than the double-compensated.
+
+### Conjugation experiments
+
+Short (4h) conjugation experiments were run using strains that were in the exponential phase of growth. 
+
+```{r}
+counts <- read.csv("./data/conjugation_data.csv", header=TRUE, sep=",") %>% filter(crop != "x") %>%
+  select(!(c(notes, crop))) %>%
+  mutate(white = (1000/spread) * (10^dilution) * count_white,
+         blue = (1000/spread) * (10^dilution) * count_blue)
+
+dat_7 <- left_join(
+    counts %>% filter(time_h==0 & media == "kb"),
+    counts %>% filter(time_h==4 & media == "kb"),
+    by=c("strain", "rep"),
+    suffix=c(".start",".end")
+    ) %>% 
+  select(strain, rep, white.start, blue.start, white.end, blue.end) %>%
+  rename(R.0 = white.start, D.0 = blue.start, R.t = white.end, D.t = blue.end) %>%
+  left_join(
+    counts %>% filter(time_h==4 & media != "kb") %>% select("strain","rep","white"),
+    by=c("strain", "rep")
+  ) %>%
+  rename(T.t = white) %>%
+  mutate(psi.R = log(R.t/R.0)/4,
+         psi.D = log(D.t/D.0)/4,
+         psi.T = psi.D, 
+         gamma = (psi.D + psi.R - psi.T) * (T.t / ((D.t * R.t) - (D.0 * R.0 * exp(psi.T * 4)))))
+```
+
+Can output for analysis using the [online Shiny app](https://ibz-shiny.ethz.ch/jhuisman/conjugator/) for cross-validation.
+
+```{r}
+# output for analysis with Conjugator
+
+dat_7 %>% mutate(ID = paste(strain, rep, sep = "."), T.0 = 0, t = 4) %>% 
+  select(ID, psi.D, psi.R, psi.T, D.0, R.0, T.0, D.t, R.t, T.t, t) %>% 
+  write.csv(file = "./data/output_for_conjugator.csv", row.names = FALSE)
+```
+
+Plot:
+
+```{r}
+dat_7_summ <- dat_7 %>%
+  group_by(strain) %>%
+  summarise(gamma = mean(gamma))
+
+pd <- position_dodge(width = 0.2)
+
+(p7 <- ggplot(data = dat_7, aes(x = factor(strain, levels=c("pQ57","delta_59")), y = log10(gamma))) +
+    geom_hline(yintercept=-11.34, linetype="dotted", linewidth=0.5) +
+  geom_point(position=pd, aes(group=rep), alpha=0.4, shape=16) +
+    geom_point(data=dat_7_summ, shape=1, size=2) +
+  scale_y_continuous(limits=c(-15,-10), breaks=seq(-15,-10,by=1), name=expression(paste("log"[10], "(\u03B3)"))) +
+  scale_x_discrete(labels=c("pQBR57", "pQBR57::plaCM"), name="donor")) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+
+png("./figs/p7.png", width=1.8, height=2.2, units="in", res=300)
+p7 + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+dev.off()
+```
+
+Statistics:
+
+```{r}
+dat_7 <- dat_7 %>% mutate(log10_gamma = log10(gamma))
+
+t.test(log10_gamma ~ strain, data=dat_7)
+```
+
+No significant difference detected by t.test.
+
+Perform equivalence test.
+
+```{r}
+library(TOSTER)
+
+t_TOST(log10_gamma ~ strain, eqb = 0.5,
+       data=dat_7)
+```
+
+Equivalence test significant, indicating that the values are not different at significance level p = 0.02 to +/- 0.5 units.
 
 ---
 
