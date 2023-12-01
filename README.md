@@ -10,7 +10,7 @@ Rosanna C.T. Wright, A. Jamie Wood, Michael Bottery, Katie Muddiman, Steve Pater
 1. Figure generation: [(`1_ExperimentalPlots.Rmd`](./docs/1_ExperimentalPlots.md))
 2. Statistical analysis: [(`2_ExperimentalAnalysis.Rmd`](./docs/2_ExperimentalAnalysis.md))
 3. Parameter estimation: [(`3_ParameterEstimation.Rmd`](./docs/3_ParameterEstimation.md))
-4. Numerical simulations of plaCM dynamics: [(`4_PlaCMSimulations.Rmd`](./docs/4_PlaCMSimulations.md))
+4. Numerical simulations of plaCM dynamics: [(`4_PlaCMSimulations.Rmd`](./docs/4_PlaCMSimulations.md)) -- TBC
 
 ---
 
