@@ -7,10 +7,10 @@ Rosanna C.T. Wright, A. Jamie Wood, Michael Bottery, Katie Muddiman, Steve Pater
 
 ### RMarkdown scripts describing figure generation, statistical analysis, numerical simulations, etc.
 
-1. Figure generation: [(`1_ExperimentalPlots.Rmd`](./docs/1_ExperimentalPlots.md))
-2. Statistical analysis: [(`2_ExperimentalAnalysis.Rmd`](./docs/2_ExperimentalAnalysis.md))
-3. Parameter estimation: [(`3_ParameterEstimation.Rmd`](./docs/3_ParameterEstimation.md))
-4. Numerical simulations of plaCM dynamics: [(`4_PlaCMSimulations.Rmd`](./docs/4_PlaCMSimulations.md)) -- TBC
+1. Figure generation: ([`1_ExperimentalPlots.Rmd`](./docs/1_ExperimentalPlots.md))
+2. Statistical analysis: ([`2_ExperimentalAnalysis.Rmd`](./docs/2_ExperimentalAnalysis.md))
+3. Parameter estimation: ([`3_ParameterEstimation.Rmd`](./docs/3_ParameterEstimation.md))
+4. Numerical simulations of plaCM dynamics: ([`4_PlaCMSimulations.Rmd`](./docs/4_PlaCMSimulations.md))
 
 ---
 
@@ -23,7 +23,10 @@ Rosanna C.T. Wright, A. Jamie Wood, Michael Bottery, Katie Muddiman, Steve Pater
 
 #### Raw data
 
-1. To be inserted here.
+1. Relative fitness data: ([`relativefitness_data.txt`](./data/relativefitness_data.txt))
+2. Dynamics (fraction) data: ([`fraction_data.txt`](./data/fraction_data.txt))
+3. Measured parameters: ([`parameters.txt`](./data/parameters.txt)); associated growth curve data used to calculate alpha ([`p_free_growthcurve.txt`](./data/p_free_growthcurve.txt))
+4. Conjugation rate data: ([`conjugation_data.csv`](./data/conjugation_data.csv))
 
 ---
 
