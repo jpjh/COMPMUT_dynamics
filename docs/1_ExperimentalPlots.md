@@ -151,6 +151,7 @@ df_expt1_summ <- df_expt1 %>%
   bind_rows(df_expt1_summ) %>%
   ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
   geom_area() + 
+    ggtitle("Mercury selection?") +
   facet_grid(. ~ Selection) +
   scale_fill_manual(
     breaks=c("chrCM", "plaCM", "none", "double / clumped"),
@@ -160,7 +161,7 @@ df_expt1_summ <- df_expt1 %>%
 ![](1_ExperimentalPlots_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
-png("./figs/p1.png", width=3.6, height=2, units="in", res=300)
+png("./figs/p1.png", width=3.6, height=2.4, units="in", res=300)
 p1_summ + theme_pub() + theme(legend.position="bottom")
 dev.off()
 ```
@@ -271,6 +272,7 @@ df_expt2_summ <- df_expt2 %>%
   ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
   geom_area() + 
   facet_grid(. ~ Selection) +
+    ggtitle("Mercury selection?") +
   scale_fill_manual(
     breaks=c("chrCM", "plaCM", "pQBR103 only", "double / clumped"),
     values=c("#882255", "#44AA99", "#004488", "#000000")))
@@ -279,7 +281,7 @@ df_expt2_summ <- df_expt2 %>%
 ![](1_ExperimentalPlots_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
-png("./figs/p2.png", width=3.6, height=2, units="in", res=300)
+png("./figs/p2.png", width=3.6, height=2.4, units="in", res=300)
 p2_summ + theme_pub() + theme(legend.position="bottom")
 dev.off()
 ```
@@ -374,6 +376,7 @@ And the summary figure:
    rename(Fraction=mean) %>%
    ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
    geom_area() + 
+   ggtitle("Recipient availability") +
    facet_grid(. ~ Ratio) +
    scale_fill_manual(
      breaks=c("chrCM", "plaCM", "none", "double / clumped"),
@@ -386,7 +389,7 @@ And the summary figure:
 ![](1_ExperimentalPlots_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
-png("./figs/p3.png", width=4.6, height=2, units="in", res=300)
+png("./figs/p3.png", width=4.6, height=2.4, units="in", res=300)
 p3 + theme_pub() + theme(legend.position="bottom")
 dev.off()
 ```
@@ -461,6 +464,7 @@ And the summary figure:
    rename(Fraction=mean) %>%
    ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
    geom_area() + 
+   ggtitle("Recipient availability") +
    facet_grid(. ~ Ratio) +
     scale_fill_manual(
     breaks=c("pQBR57 (wild-type) starting in chrCM", "plaCM", "none", "double / clumped"),
@@ -473,7 +477,7 @@ And the summary figure:
 ![](1_ExperimentalPlots_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
-png("./figs/p4.png", width=4.6, height=2, units="in", res=300)
+png("./figs/p4.png", width=4.6, height=2.4, units="in", res=300)
 p4 + theme_pub() + theme(legend.position="bottom")
 dev.off()
 ```
@@ -548,6 +552,7 @@ And the summary figure:
    rename(Fraction=mean) %>%
    ggplot(aes(x=Transfer, y=Fraction, fill=Population)) +
    geom_area() + 
+   ggtitle("Recipient availability") +
    facet_grid(. ~ Ratio) +
     scale_fill_manual(
     breaks=c("pQBR57 (wild-type) starting in uncompensated", "plaCM", "none", "double / clumped"),
@@ -560,7 +565,7 @@ And the summary figure:
 ![](1_ExperimentalPlots_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
-png("./figs/p5.png", width=4.6, height=2, units="in", res=300)
+png("./figs/p5.png", width=4.6, height=2.4, units="in", res=300)
 p5 + theme_pub() + theme(legend.position="bottom")
 dev.off()
 ```

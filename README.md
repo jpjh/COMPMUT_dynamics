@@ -1,7 +1,7 @@
 # COMPMUT_dynamics
 Ecological dynamics of plasmid compensatory mutations: data and analysis.
 
-Rosanna C.T. Wright, A. Jamie Wood, Michael Bottery, Katie Muddiman, Steve Paterson, Ellie Harrison, Michael A. Brockhurst, James P.J. Hall.
+Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve Paterson, Ellie Harrison, Michael A. Brockhurst, James P.J. Hall.
 
 ---
 
