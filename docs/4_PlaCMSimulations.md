@@ -1,0 +1,777 @@
+COMPMUT Dynamics 4: Simulations and analysis
+================
+jpjh
+compiled November 2023
+
+## Simulate the plasmid compensatory mutations experiment
+
+A general ODE model was developed to simulate competition between
+plasmid-free, wild-type plasmid containing, and two different CMs. The
+model is specified in `./model/COMPMOD_model.R`.
+
+It describes:
+
+- Z_f = no plasmid (i.e. SBW25)
+- X_0 = plasmid-carrier (i.e. SBW25(pQBR57))
+- X_1 = plasmid-carrier with CM type 1 (i.e. SBW25(pQBR57::plaCM))
+- X_2 = plasmid-carrier with CM type 2 (i.e. SBW25::chrCM(pQBR57))
+- X_0t = transconjugant from X_0
+- X_1t = transconjugant from X_1 (i.e. wild-type recipients of
+  pQBR57::plaCM)
+- X_2t = transconjugant from X_2 (i.e. wild-type recipients of
+  unameliorated plasmid from CM type 2)
+
+### Identify suitable model parameters
+
+See `3_ParameterEstimation.Rmd` for details.
+
+``` r
+(parameters <- read.table("./data/parameters.txt", header=TRUE)) %>% kable(digits = 20)
+```
+
+| parameter  |        value |           sd |
+|:-----------|-------------:|-------------:|
+| alpha      | 5.412246e-01 | 5.535240e-02 |
+| beta       | 8.180085e-01 | 4.290745e-02 |
+| beta_chrCM | 9.690664e-01 | 6.987190e-02 |
+| beta_plaCM | 9.449607e-01 | 4.131810e-02 |
+| K          | 5.716250e+09 | 1.590994e+09 |
+| gamma      | 4.573199e-12 | 1.013806e-12 |
+| mu         | 4.125000e-02 | 0.000000e+00 |
+
+### Analytical predictions
+
+The analytical model is scaled to K, so the effective gamma is equal to
+gamma \* K. The analytical model also describes the ’beta’s as the
+overall growth rate of the plasmid-carrying populations, rather than the
+relative effect as described in the parameters table. Add additional
+variables describing this. Also, add a variable describing a plausible
+minimum conjugation rate (gamma_min):
+
+``` r
+param_sd <- parameters %>% select(-value) %>% pivot_wider(names_from = "parameter", values_from = "sd")
+param_values <- parameters %>% select(-sd) %>% 
+  pivot_wider(names_from = "parameter", values_from = "value") %>%
+  mutate(gamma_ = gamma * K,
+         gamma_min = (gamma - (2*param_sd$gamma)) * (K - (2*param_sd$K)),
+         beta_P = alpha * beta,
+         beta_C = alpha * beta_chrCM,
+         beta_Q = alpha * beta_plaCM)
+```
+
+Consider wild-type plasmid first.
+
+Invasion if gamma \> μ(α-β)/(α-μ). Domination if gamma \> μ(α-β)/(β-μ).
+
+``` r
+(comparison_table <- data.frame(
+  comparison = rep(c("no","chrCM","plaCM"),2),
+  beta = rep(c(param_values$beta_P,param_values$beta_C,param_values$beta_Q),2),
+  gamma = c(rep(param_values$gamma_,3), rep(param_values$gamma_min, 3)),
+  alpha = param_values$alpha,
+  mu = param_values$mu) %>%
+  mutate(inv_threshold = (mu * (alpha - beta)/(alpha - mu)),
+         inv_ratio = gamma / inv_threshold,
+         invasion = ifelse(gamma > inv_threshold, "YES", "no"),
+         dom_threshold = (mu * (alpha - beta)/(beta - mu)),
+         dom_ratio = gamma / dom_threshold,
+         domination = ifelse(gamma > dom_threshold, "YES", "no"))) %>% 
+  select(-alpha, -mu) %>% kable()
+```
+
+| comparison |      beta |     gamma | inv_threshold |  inv_ratio | invasion | dom_threshold | dom_ratio | domination |
+|:-----------|----------:|----------:|--------------:|-----------:|:---------|--------------:|----------:|:-----------|
+| no         | 0.4427263 | 0.0261415 |     0.0081265 |  3.2168193 | YES      |     0.0101203 |  2.583085 | YES        |
+| chrCM      | 0.5244826 | 0.0261415 |     0.0013813 | 18.9254977 | YES      |     0.0014291 | 18.291763 | YES        |
+| plaCM      | 0.5114360 | 0.0261415 |     0.0024577 | 10.6366501 | YES      |     0.0026134 | 10.002916 | YES        |
+| no         | 0.4427263 | 0.0064512 |     0.0081265 |  0.7938434 | no       |     0.0101203 |  0.637451 | no         |
+| chrCM      | 0.5244826 | 0.0064512 |     0.0013813 |  4.6704148 | YES      |     0.0014291 |  4.514022 | YES        |
+| plaCM      | 0.5114360 | 0.0064512 |     0.0024577 |  2.6249015 | YES      |     0.0026134 |  2.468509 | YES        |
+
+Predicts that the wild-type plasmid can invade and dominate a
+plasmid-free population, which is in fact what we can see experimentally
+e.g. in [Stevenson et al. 2017 doi:
+10.1038/ismej.2017.42](https://www.nature.com/articles/ismej201742).
+However, this is sensitive, and a 2.5x reduction in the product of gamma
+and K can result in a mixed population, and a \>3.2x reduction can
+result in the plasmid being lost. Such a pattern can plausibly occur,
+e.g. with 2x SD reduction in both terms (see bottom lines of table).
+
+Both CMs exceed the thresholds for invasion and domination, even with
+the reduced estimate for conjugation rate. To examine the dynamics,
+develop numerical simulations.
+
+### Numerical simulations
+
+The model `COMPMOD_model.R` has been developed as a Shiny app for
+further investigation, accessible at
+<https://jpjh.shinyapps.io/COMPMOD_shiny/>. Here, the model is run with
+a range of parameters to investigate the competition between plaCM and
+wild-type plasmid as described in the manuscript.
+
+In this model, we set up the parameters so CM 2 is not present, and
+fitness and conjugation rate for the CM 1 transconjugants are the same
+as for the CM 1 donors.
+
+First, run as a continuous model, i.e. mu = 0.04125 and dilFac = 1
+(i.e. no dilution at each ‘transfer’, washout is continuous).
+
+``` r
+source("./model/COMPMOD_model.R")
+
+parameters_mod0 <- c(alpha_Z_f = param_values$alpha,
+                     alpha_X_0 = param_values$beta_P,
+                     alpha_X_1 = param_values$beta_Q,
+                     alpha_X_2 = param_values$beta_C,
+                     alpha_X_0t = param_values$beta_P,
+                     alpha_X_1t = param_values$beta_Q,
+                     alpha_X_2t = param_values$beta_P,
+                     gamma_X_0 =  param_values$gamma,
+                     gamma_X_1 =  param_values$gamma,
+                     gamma_X_2 =  param_values$gamma,
+                     gamma_X_0t = param_values$gamma,
+                     gamma_X_1t = param_values$gamma,
+                     gamma_X_2t = param_values$gamma,
+                     eta_Z_f = 0,
+                     eta_X_0 = 0,
+                     eta_X_1 = 0,
+                     eta_X_2 = 0,
+                     eta_X_0t = 0,
+                     eta_X_1t = 0,
+                     eta_X_2t = 0,
+                     K = param_values$K,
+                     mu = param_values$mu)
+
+numTransfers <- 192
+transferTime <- 24
+dilFac <- 1
+
+times <- seq(0, transferTime*numTransfers, by = 0.1) 
+
+startfrac <- unname(parameters_mod0["K"] * 0.01)   # the population size at the start, 
+            # as estimated as ~ starting overnight cultures at saturation
+
+initial_state <- c(Z_f = startfrac,   
+                 X_0 = startfrac,  
+                 X_1 = startfrac,  
+                 X_2 = 0,
+                 X_0t = 0,
+                 X_1t = 0,
+                 X_2t = 0)
+
+state_mod01 <- initial_state * c(0.9,0.05,0.05,0,0,0,0)
+
+event <- data.frame(var = rep(c("Z_f", "X_0", "X_1", "X_2", "X_0t", "X_1t", "X_2t"), numTransfers),
+                    time = rep(seq(transferTime,transferTime*numTransfers,by=transferTime),each=7), 
+                    value = c(dilFac), # set to 1 for the continuous model
+                    method = c("mult"))
+
+runModel <- function(state, func, times, parms, events, title="") {
+  data.frame(ode(y = state, times = times,
+                 func = func, parms = parms,
+                 events = list(data = events))) %>%
+    pivot_longer(cols=-time, names_to = "subpop", values_to = "density") %>%
+    mutate(subpop = factor(subpop, levels=c('Z_f','X_0','X_1','X_2','X_0t','X_1t','X_2t'))) %>%
+    group_by(time, subpop) %>% summarise(tot = sum(density), .groups='drop_last') %>%
+    mutate(fraction = tot/sum(tot),
+           model = title)
+}
+
+mod01 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod0,
+                  title = "plaCM vs. wt 10:1 free")
+
+state_mod02 <- initial_state * c(0.5,0.25,0.25,0,0,0,0)         
+
+mod02 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod0,
+                  title = "plaCM vs. wt 1:1 free")
+
+state_mod03 <- initial_state * c(0.1,0.45,0.45,0,0,0,0)    
+
+mod03 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod0,
+                  title = "plaCM vs. wt 1:10 free")
+
+state_mod04 <- initial_state * c(0,0.5,0.5,0,0,0,0)    
+
+mod04 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod0,
+                  title = "plaCM vs. wt")
+
+mod0 <- rbind(mod01, mod02, mod03, mod04) %>%
+  mutate(model = factor(model, levels=c("plaCM vs. wt 10:1 free",
+                                        "plaCM vs. wt 1:1 free",
+                                        "plaCM vs. wt 1:10 free",
+                                        "plaCM vs. wt")),
+         subpop = factor(subpop, levels=c("X_0","X_0t","X_1","X_1t",
+                                              "X_2","X_2t","Z_f")),
+         gamma = "gamma_plaCM = 1")
+
+mod0 %>% filter(time %in% seq(0,transferTime*numTransfers,transferTime)) %>%
+  ggplot(aes(time, fraction, fill = subpop)) +
+  geom_area() +
+  scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#882255","#CC6677","#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","X_2","X_2t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "CM1 donor","CM1 transconjugant",
+                             "CM2 donor","CM2 transconjugant",
+                             "plasmid-free"),
+                    name="subpopulation", drop=FALSE) +
+  facet_grid(.~model) +
+  ggtitle("as parameterised") +
+  theme(legend.position="bottom")
+```
+
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+These models poorly recapitulate the experimental observations.
+Consistent with the analytical model, where plaCM has similar gamma to
+the wild-type, plaCM wins.
+
+Investigate modification of gamma_plaCM.
+
+``` r
+parameters_mod1_adj <- parameters_mod0
+parameters_mod1_adj[c("gamma_X_1","gamma_X_1t")] <- 0.1*param_values$gamma
+
+mod11 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod12 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod13 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod14 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt")
+
+parameters_mod1_adj[c("gamma_X_1","gamma_X_1t")] <- 0.01*param_values$gamma
+
+mod21 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod22 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod23 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod24 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt")
+
+parameters_mod1_adj[c("gamma_X_1","gamma_X_1t")] <- 0.001*param_values$gamma
+
+mod31 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod32 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod33 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod34 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt")
+
+mod1 <- rbind(mod11, mod12, mod13, mod14) %>%
+  mutate(gamma = "gamma_plaCM = 0.1")
+
+mod2 <- rbind(mod21, mod22, mod23, mod24) %>%
+  mutate(gamma = "gamma_plaCM = 0.01")
+
+mod3 <- rbind(mod31, mod32, mod33, mod34) %>%
+  mutate(gamma = "gamma_plaCM = 0.001")
+
+mod <- rbind(mod0, mod1, mod2, mod3) %>%
+  mutate(model = factor(model, levels=c("plaCM vs. wt 10:1 free",
+                                        "plaCM vs. wt 1:1 free",
+                                        "plaCM vs. wt 1:10 free",
+                                        "plaCM vs. wt")),
+         subpop = factor(subpop, levels=c("X_0","X_0t","X_1","X_1t",
+                                              "X_2","X_2t","Z_f")))
+
+(p_gamma_scan <- mod %>% filter(time %in% seq(0,transferTime*numTransfers,transferTime)) %>%
+  ggplot(aes(time, fraction, fill = subpop)) +
+  geom_area() +
+    scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#882255","#CC6677","#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","X_2","X_2t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "CM1 donor","CM1 transconjugant",
+                             "CM2 donor","CM2 transconjugant",
+                             "plasmid-free"),
+                    name="subpopulation", drop=FALSE) +
+  facet_grid(gamma~model) +
+  theme(legend.position="bottom"))
+```
+
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
+png("./figs/p11.png", width=7.2, height=3.6, units="in", res=300)
+p_gamma_scan + 
+  geom_vline(xintercept=192, linewidth=0.2, linetype="dotted") +
+  theme_pub() + theme(legend.position="bottom")
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+png("./figs/p12.png", width=3.6, height=3.6, units="in", res=300)
+p_gamma_scan + 
+  scale_x_continuous(limits=c(0,384),
+                     breaks=c(0,192,384)) +
+  geom_vline(xintercept=192, linewidth=0.2, linetype="dotted") +
+  theme_pub()
+```
+
+    ## Warning: Removed 19712 rows containing non-finite values (`stat_align()`).
+
+``` r
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+Consistent with analysis, reducing gamma_plaCM by ~100x is sufficient to
+recapitulate the general experimental results showing fluctuating
+dynamics in the competition between wild-type and plaCM pQBR57.
+
+### Investigation of the transfer model.
+
+Re-run these analyses, but rather than including mu as a continuous
+turnover effect, model turnover directly through transfers.
+
+Set mu to zero, and implement through ‘events’.
+
+``` r
+parameters_mod2 <- parameters_mod0
+parameters_mod2["mu"] <- 0
+
+event_batch <- event %>%
+  mutate(value = c(0.01))
+
+mod101 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times,
+                  parms = parameters_mod2,
+                  events = event_batch,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod102 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times,
+                  parms = parameters_mod2,
+                  events = event_batch,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod103 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times,
+                  parms = parameters_mod2,
+                  events = event_batch,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod104 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times,
+                  parms = parameters_mod2,
+                  events = event_batch,
+                  title = "plaCM vs. wt")
+
+mod10 <- rbind(mod101, mod102, mod103, mod104) %>%
+  mutate(model = factor(model, levels=c("plaCM vs. wt 10:1 free",
+                                        "plaCM vs. wt 1:1 free",
+                                        "plaCM vs. wt 1:10 free",
+                                        "plaCM vs. wt")))
+
+mod10 %>% filter(time %in% seq(0,transferTime*numTransfers,transferTime)) %>%
+  ggplot(aes(time, fraction, fill = subpop)) +
+  geom_area() +
+  scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#882255","#CC6677","#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","X_2","X_2t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "CM1 donor","CM1 transconjugant",
+                             "CM2 donor","CM2 transconjugant",
+                             "plasmid-free"),
+                    name="subpopulation", drop=FALSE) +
+  facet_grid(.~model) +
+  theme(legend.position="bottom")
+```
+
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+The plasmid is lost from the system if the mean measured parameters are
+used in the transfer model. This is likely because the population is
+maintained at lower capacity, which reduces the effective conjugation
+rate, preventing maintenance of the plasmid through infectious transfer.
+
+Adjust relevant parameters within realistic bounds to investigate. The
+main values likely to result in maintenance are K, alpha, and gamma.
+
+Increase alpha, gamma and K by 2x SD.
+
+``` r
+max_gamma <- param_values$gamma + 2*(param_sd$gamma)
+max_K <- param_values$K + 2*(param_sd$K)
+max_alpha_modifier <- (param_values$alpha + (2*param_sd$alpha))/param_values$alpha
+
+parameters_mod3_adj <- c(alpha_Z_f = param_values$alpha * max_alpha_modifier,
+                         alpha_X_0 = param_values$beta_P * max_alpha_modifier,
+                         alpha_X_1 = param_values$beta_Q * max_alpha_modifier,
+                         alpha_X_2 = param_values$beta_C * max_alpha_modifier,
+                         alpha_X_0t = param_values$beta_P * max_alpha_modifier,
+                         alpha_X_1t = param_values$beta_Q * max_alpha_modifier,
+                         alpha_X_2t = param_values$beta_P * max_alpha_modifier,
+                         gamma_X_0 =  max_gamma * 1.5,
+                         gamma_X_1 =  max_gamma,
+                         gamma_X_2 =  max_gamma,
+                         gamma_X_0t = max_gamma * 1.5,
+                         gamma_X_1t = max_gamma,
+                         gamma_X_2t = max_gamma,
+                         eta_Z_f = 0,
+                         eta_X_0 = 0,
+                         eta_X_1 = 0,
+                         eta_X_2 = 0,
+                         eta_X_0t = 0,
+                         eta_X_1t = 0,
+                         eta_X_2t = 0,
+                         K = max_K,
+                         mu = 0)
+
+mod201 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod202 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod203 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod204 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt")
+
+parameters_mod3_adj[c("gamma_X_1","gamma_X_1t")] <- max_gamma*0.1
+
+mod211 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod212 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod213 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod214 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt")
+
+parameters_mod3_adj[c("gamma_X_1","gamma_X_1t")] <- max_gamma*0.01
+
+mod221 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod222 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod223 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod224 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt")
+
+parameters_mod3_adj[c("gamma_X_1","gamma_X_1t")] <- max_gamma*0.001
+
+mod231 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod232 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod233 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod234 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt")
+
+
+mod20 <- rbind(mod201, mod202, mod203, mod204) %>%
+  mutate(gamma = "gamma_plaCM = 1")
+
+mod21 <- rbind(mod211, mod212, mod213, mod214) %>%
+  mutate(gamma = "gamma_plaCM = 0.1")
+
+mod22 <- rbind(mod221, mod222, mod223, mod224) %>%
+  mutate(gamma = "gamma_plaCM = 0.01")
+
+mod23 <- rbind(mod231, mod232, mod233, mod234) %>%
+  mutate(gamma = "gamma_plaCM = 0.001")
+
+mod_transfer_adj <- rbind(mod20, mod21, mod22, mod23) %>%
+  mutate(model = factor(model, levels=c("plaCM vs. wt 10:1 free",
+                                        "plaCM vs. wt 1:1 free",
+                                        "plaCM vs. wt 1:10 free",
+                                        "plaCM vs. wt")),
+         gamma = factor(gamma,
+                        levels=c("gamma_plaCM = 1", "gamma_plaCM = 0.1", "gamma_plaCM = 0.01", "gamma_plaCM = 0.001")),
+         subpop = factor(subpop, levels=c("X_0","X_0t","X_1","X_1t",
+                                          "X_2","X_2t","Z_f")))
+
+(p_transfer_gamma_adj_scan <- mod_transfer_adj %>% 
+    filter(time %in% seq(0,transferTime*numTransfers,transferTime)) %>%
+  ggplot(aes(time, fraction, fill = subpop)) +
+  geom_area() +
+  scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#882255","#CC6677","#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","X_2","X_2t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "CM1 donor","CM1 transconjugant",
+                             "CM2 donor","CM2 transconjugant",
+                             "plasmid-free"),
+                    name="subpopulation", drop=FALSE) +
+  facet_grid(gamma~model) +
+  theme(legend.position="bottom") +
+  ggtitle("transfer model with upper limits for K and gamma"))
+```
+
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+png("./figs/p21.png", width=7.2, height=3.6, units="in", res=300)
+p_transfer_gamma_adj_scan + 
+  geom_vline(xintercept=192, linewidth=0.2, linetype="dotted") +
+  theme_pub() + theme(legend.position="bottom")
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+png("./figs/p22.png", width=3.6, height=3.6, units="in", res=300)
+p_transfer_gamma_adj_scan + 
+  scale_x_continuous(limits=c(0,384),
+                     breaks=c(0,192,384)) +
+  geom_vline(xintercept=192, linewidth=0.2, linetype="dotted") +
+  theme_pub()
+```
+
+    ## Warning: Removed 19712 rows containing non-finite values (`stat_align()`).
+
+``` r
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+Here, we can clearly see the oscillatory effect when gamma_Q is reduced
+to 0.1x gamma_P.
+
+Make a figure for the manuscript describing these features.
+
+``` r
+parameters_mod3_adj[c("gamma_X_1","gamma_X_1t")] <- max_gamma*0.0133
+
+mod241 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod242 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod243 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod244 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times, events = event_batch,
+                  parms = parameters_mod3_adj,
+                  title = "plaCM vs. wt")
+
+mod_transfer_adj_fig <- rbind(mod241, mod242, mod243, mod244) %>%
+  mutate(model = factor(model, levels=c("plaCM vs. wt 10:1 free",
+                                        "plaCM vs. wt 1:1 free",
+                                        "plaCM vs. wt 1:10 free",
+                                        "plaCM vs. wt")),
+    subpop = factor(subpop, levels=c("X_0","X_0t","X_1","X_1t",
+                                          "X_2","X_2t","Z_f")))
+
+library(patchwork)
+
+p_transfer_gamma_adj_fig <- mod_transfer_adj_fig %>% 
+    filter(time %in% seq(0,transferTime*numTransfers,transferTime) &
+             !(subpop %in% c("X_2", "X_2t"))) %>%
+  ggplot(aes(time/24, fraction, fill = subpop)) +
+  geom_area() +
+  scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "plaCM donor","plaCM transconjugant",
+                             "plasmid-free"),
+                    name="Population") +
+    labs(x="time (d)") + 
+  facet_grid(.~model) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+p_transfer_gamma_adj_fig_crop <- mod_transfer_adj_fig %>% 
+    filter(time %in% seq(0,transferTime*numTransfers,transferTime) &
+             time < 193 & 
+             !(subpop %in% c("X_2", "X_2t"))) %>%
+  ggplot(aes(time/24, fraction, fill = subpop)) +
+  geom_area() +
+  scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "plaCM donor","plaCM transconjugant",
+                             "plasmid-free"),
+                    name="Population") +
+    labs(x="time (d)") + 
+  facet_grid(.~model) +
+  theme(legend.position="bottom", strip.text.x=element_blank())
+
+doubleplot <- (p_transfer_gamma_adj_fig_crop + theme_pub() +
+                 theme(legend.position="right")) /
+  (p_transfer_gamma_adj_fig +
+     theme_pub() +
+     theme(axis.text.x=element_text(angle=45, hjust=1), strip.text.x=element_blank()))
+
+png("./figs/p41.png", width=5.2, height=3.6, units="in", res=300)
+doubleplot
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+This plot shows the full dynamics in the bottom panels, revealing the
+damped oscillatory behaviour, and the short-term dynamics equivalent to
+the experimental results in the top panels.
+
+------------------------------------------------------------------------
+
+**[Back to index.](../README.md)**

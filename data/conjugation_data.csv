@@ -1,0 +1,43 @@
+﻿strain,time_h,rep,media,dilution,spread,count_white,count_blue,notes,crop
+pQ57,0,a,kb,4,50,97,165,start donors and recipients,
+delta_59,0,a,kb,4,50,158,151,start donors and recipients,
+pQ57,0,b,kb,4,50,138,170,start donors and recipients,
+delta_59,0,b,kb,4,50,154,115,start donors and recipients,
+pQ57,0,c,kb,4,50,97,103,start donors and recipients,
+delta_59,0,c,kb,4,50,105,126,start donors and recipients,
+pQ57,0,d,kb,4,50,172,180,start donors and recipients,
+delta_59,0,d,kb,4,50,194,132,start donors and recipients,
+pQ57,0,e,kb,4,50,177,177,start donors and recipients,
+delta_59,0,e,kb,4,50,186,185,start donors and recipients,
+pQ57,0,f,kb,4,50,178,236,start donors and recipients,
+delta_59,0,f,kb,4,50,154,217,start donors and recipients,
+pQ57,4,a,kb,5,50,182,311,end donors and recipients,
+delta_59,4,a,kb,5,50,216,327,end donors and recipients,
+pQ57,4,b,kb,5,50,291,312,end donors and recipients,
+delta_59,4,b,kb,5,50,291,312,end donors and recipients,
+pQ57,4,c,kb,5,50,271,272,end donors and recipients,
+delta_59,4,c,kb,5,50,315,379,end donors and recipients,
+pQ57,4,d,kb,5,50,196,302,end donors and recipients,
+delta_59,4,d,kb,5,50,204,216,end donors and recipients,
+pQ57,4,e,kb,5,50,459,427,end donors and recipients,
+delta_59,4,e,kb,5,50,258,303,end donors and recipients,
+pQ57,4,f,kb,5,50,290,397,end donors and recipients,
+delta_59,4,f,kb,5,50,279,374,end donors and recipients,
+pQ57,4,a,kb+gm10+hg20,3,50,11,,end transconjugants,x
+pQ57,4,a,kb+gm10+hg20,2,50,106,,end transconjugants,
+delta_59,4,a,kb+gm10+hg20,2,50,132,,end transconjugants,
+pQ57,4,b,kb+gm10+hg20,3,50,35,,end transconjugants,x
+pQ57,4,b,kb+gm10+hg20,2,50,357,,end transconjugants,
+delta_59,4,b,kb+gm10+hg20,2,50,411,,end transconjugants,
+pQ57,4,c,kb+gm10+hg20,3,50,64,,end transconjugants,x
+pQ57,4,c,kb+gm10+hg20,2,50,653,,end transconjugants,
+delta_59,4,c,kb+gm10+hg20,2,50,811,,end transconjugants,
+pQ57,4,d,kb+gm10+hg20,3,50,91,,end transconjugants,x
+pQ57,4,d,kb+gm10+hg20,2,50,864,,end transconjugants,
+delta_59,4,d,kb+gm10+hg20,2,50,1148,,end transconjugants,
+pQ57,4,e,kb+gm10+hg20,3,50,208,,end transconjugants,x
+pQ57,4,e,kb+gm10+hg20,2,50,1938,,end transconjugants,
+delta_59,4,e,kb+gm10+hg20,2,50,1035,,end transconjugants,
+pQ57,4,f,kb+gm10+hg20,3,50,177,,end transconjugants,x
+pQ57,4,f,kb+gm10+hg20,2,50,1639,,end transconjugants,
+delta_59,4,f,kb+gm10+hg20,2,50,1160,,end transconjugants,
