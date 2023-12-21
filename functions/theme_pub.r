@@ -18,7 +18,7 @@ theme_pub <- function(base_size = 6, base_family = "Helvetica")
         panel.spacing.y=unit(0.55, units="lines"),
         panel.spacing.x=unit(0.2, units="lines"),
         plot.margin=unit(c(2,2,0.1,0.1), units="mm"),
-        plot.title=element_text(size=rel(1.6)),
+        plot.title=element_text(size=rel(1)),
         rect=element_rect(fill="white", colour="black", linewidth=0.35, linetype=1),
         strip.background = element_blank(),
         strip.text.y=element_text(size=rel(1.2), 
