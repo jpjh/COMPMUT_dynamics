@@ -30,7 +30,7 @@ Estimate growth rates from a plate-reader experiment, using the R package `gcply
 ```{r}
 library(gcplyr)
 
-read.csv("./data/p_free_growthcurve.txt", header=TRUE) %>%
+read.csv("./data/4_WTGrowthCurve.csv", header=TRUE) %>%
   group_by(well, replicate) %>%
   mutate(Time = cycle / 4,
          smoothed = smooth_data(x = Time, y = value,
@@ -204,7 +204,7 @@ parameters[7,] <- c("mu", mu, 0)
 ```{r}
 parameters %>% kable()
 
-write.table(parameters, file = c("./data/parameters.txt"),
+write.table(parameters, file = c("./data/3_Parameters.txt"),
             sep="\t", quote=FALSE, row.names=FALSE)
 ```
 

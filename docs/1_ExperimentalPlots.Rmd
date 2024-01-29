@@ -1,6 +1,6 @@
 ---
 title: "COMPMUT Dynamics 1: Generation of dynamics figures"
-date: "compiled November 2023"
+date: "compiled Jan 2024"
 author: "jpjh"
 output: rmarkdown::github_document
 editor_options: 
@@ -30,7 +30,7 @@ Plots for the dynamics experiments.
 Read in data frame.
 
 ```{r}
-df <- read.table("./data/fraction_data.txt", header=TRUE, quote='""')
+df <- read.csv("./data/2_FractionData.csv", header=TRUE)
 
 summary(df) %>% kable()
 ```
@@ -55,10 +55,10 @@ Experiment 1 part 1: Effect of selection.
 
 Treatments under consideration:
 
-- A SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.GFP ; SBW25d4242.GmR.dTomato pQBR57
-- AM SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.GFP ; SBW25d4242.GmR.dTomato pQBR57 + Mercury
-- C SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.tdTomato ; SBW25d4242.GmR.YFP pQBR57
-- CM SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.tdTomato ; SBW25d4242.GmR.YFP pQBR57 + Mercury
+- A SBW25.GmR ; SBW25.GmR pQBR57d59.GFP ; SBW25d4242.GmR.dTomato pQBR57
+- AM SBW25.GmR ; SBW25.GmR pQBR57d59.GFP ; SBW25d4242.GmR.dTomato pQBR57 + Mercury
+- C SBW25.GmR ; SBW25.GmR pQBR57d59.tdTomato ; SBW25d4242.GmR.YFP pQBR57
+- CM SBW25.GmR ; SBW25.GmR pQBR57d59.tdTomato ; SBW25d4242.GmR.YFP pQBR57 + Mercury
 
 For A and AM, chrCM = Fraction_Yellow and plaCM = Fraction_Red. For C and CM, chrCM = Fraction_Red and plaCM = Fraction_Yellow.
 
@@ -129,6 +129,10 @@ df_expt1_summ <- df_expt1 %>%
     values=c("#882255", "#44AA99", "#DDDDDD", "#000000")))
 
 png("./figs/p1.png", width=3.6, height=2.4, units="in", res=300)
+p1_summ + theme_pub() + theme(legend.position="bottom")
+dev.off()
+
+tiff("./figs/Fig3.tiff", width=3.6, height=2.4, units="in", res=300)
 p1_summ + theme_pub() + theme(legend.position="bottom")
 dev.off()
 
@@ -209,6 +213,10 @@ png("./figs/p2.png", width=3.6, height=2.4, units="in", res=300)
 p2_summ + theme_pub() + theme(legend.position="bottom")
 dev.off()
 
+tiff("./figs/Fig4.tiff", width=3.6, height=2.4, units="in", res=300)
+p2_summ + theme_pub() + theme(legend.position="bottom")
+dev.off()
+
 png("./figs/p2_supp.png", width=7.2, height=4, units="in", res=300)
 p2_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
@@ -280,6 +288,10 @@ png("./figs/p3.png", width=4.6, height=2.4, units="in", res=300)
 p3 + theme_pub() + theme(legend.position="bottom")
 dev.off()
 
+tiff("./figs/Fig5.tiff", width=4.6, height=2.4, units="in", res=300)
+p3 + theme_pub() + theme(legend.position="bottom")
+dev.off()
+
 png("./figs/p3_supp.png", width=4.6, height=7.2, units="in", res=300)
 p3_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
@@ -333,6 +345,10 @@ png("./figs/p4.png", width=4.6, height=2.4, units="in", res=300)
 p4 + theme_pub() + theme(legend.position="bottom")
 dev.off()
 
+tiff("./figs/Fig6.tiff", width=4.6, height=2.4, units="in", res=300)
+p4 + theme_pub() + theme(legend.position="bottom")
+dev.off()
+
 png("./figs/p4_supp.png", width=4.6, height=7.2, units="in", res=300)
 p4_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
@@ -383,6 +399,10 @@ And the summary figure:
     values=c("#DDCC77", "#44AA99", "#DDDDDD", "#000000")))
 
 png("./figs/p5.png", width=4.6, height=2.4, units="in", res=300)
+p5 + theme_pub() + theme(legend.position="bottom")
+dev.off()
+
+tiff("./figs/Fig7.tiff", width=4.6, height=2.4, units="in", res=300)
 p5 + theme_pub() + theme(legend.position="bottom")
 dev.off()
 

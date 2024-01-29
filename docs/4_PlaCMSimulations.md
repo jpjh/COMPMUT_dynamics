@@ -26,7 +26,7 @@ It describes:
 See `3_ParameterEstimation.Rmd` for details.
 
 ``` r
-(parameters <- read.table("./data/parameters.txt", header=TRUE)) %>% kable(digits = 20)
+(parameters <- read.table("./data/3_Parameters.txt", header=TRUE)) %>% kable(digits = 20)
 ```
 
 | parameter  |        value |           sd |
@@ -761,6 +761,15 @@ doubleplot <- (p_transfer_gamma_adj_fig_crop + theme_pub() +
      theme(axis.text.x=element_text(angle=45, hjust=1), strip.text.x=element_blank()))
 
 png("./figs/p41.png", width=5.2, height=3.6, units="in", res=300)
+doubleplot
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+tiff("./figs/Fig8.tiff", width=5.2, height=3.6, units="in", res=300)
 doubleplot
 dev.off()
 ```

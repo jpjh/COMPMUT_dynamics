@@ -16,7 +16,7 @@ library(gcplyr)
 ```
 
     ## ## 
-    ## ## gcplyr (Version 1.7.1, Build Date: 2023-11-03)
+    ## ## gcplyr (Version 1.6.0, Build Date: 2023-09-13)
     ## ## See http://github.com/mikeblazanin/gcplyr for additional documentation
     ## ## Please cite software as:
     ## ##   Blazanin, Michael. 2023. gcplyr: an R package for microbial growth
@@ -24,7 +24,7 @@ library(gcplyr)
     ## ##
 
 ``` r
-read.csv("./data/p_free_growthcurve.txt", header=TRUE) %>%
+read.csv("./data/4_WTGrowthCurve.csv", header=TRUE) %>%
   group_by(well, replicate) %>%
   mutate(Time = cycle / 4,
          smoothed = smooth_data(x = Time, y = value,
@@ -232,9 +232,9 @@ left_join(d7_start_pf, d7_end_DR) %>%
     ## Joining with `by = join_by(replicate, donor, plasmid, recipient)`
     ## Joining with `by = join_by(replicate, donor, plasmid, recipient)`
 
-|       mean |           sd | log10mean |   log10sd |
-|-----------:|-------------:|----------:|----------:|
-| 4.5732e-12 | 1.013806e-12 | -11.34845 | 0.1022044 |
+|         mean |           sd | log10mean |   log10sd |
+|-------------:|-------------:|----------:|----------:|
+| 4.573199e-12 | 1.013806e-12 | -11.34845 | 0.1022044 |
 
 Estimates:
 
@@ -280,7 +280,7 @@ parameters %>% kable()
 | mu         | 0.04125      | 0            |
 
 ``` r
-write.table(parameters, file = c("./data/parameters.txt"),
+write.table(parameters, file = c("./data/3_Parameters.txt"),
             sep="\t", quote=FALSE, row.names=FALSE)
 ```
 

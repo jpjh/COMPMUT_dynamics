@@ -1,7 +1,7 @@
 COMPMUT Dynamics 2: Data analysis
 ================
 jpjh
-compiled November 2023
+compiled Jan 2024
 
 ## Analysis of plaCM/chrCM experiment dynamics
 
@@ -10,17 +10,17 @@ compiled November 2023
 Quick look at data:
 
 ``` r
-(df <- read.table("./data/fraction_data.txt", header=TRUE, quote='""')) %>% head() %>% kable()
+(df <- read.csv("./data/2_FractionData.csv", header=TRUE)) %>% head() %>% kable()
 ```
 
 | Treatment | Replicate | Transfer | Total_count | Fraction_Yellow | Fraction_Red | Fraction_Orange | Fraction_Blue | Experiment | Ratio |
 |:----------|----------:|---------:|------------:|----------------:|-------------:|----------------:|--------------:|-----------:|------:|
-| F3        |         1 |        2 |        5344 |       0.0194611 |    0.9230913 |       0.0071108 |     0.0503368 |          1 |    NA |
-| AM        |         4 |        3 |        4540 |       0.2273128 |    0.6841410 |       0.0290749 |     0.0594714 |          1 |    NA |
-| A         |         5 |        3 |        4764 |       0.2153652 |    0.2636440 |       0.0136440 |     0.5073468 |          1 |    NA |
-| AM        |         5 |        3 |        3618 |       0.2501382 |    0.6672195 |       0.0320619 |     0.0505804 |          1 |    NA |
+| A         |         1 |        0 |        4092 |       0.1615347 |    0.2663734 |       0.0090420 |     0.5630499 |          1 |    NA |
+| A         |         1 |        1 |        5345 |       0.1665108 |    0.2239476 |       0.0065482 |     0.6029935 |          1 |    NA |
+| A         |         1 |        2 |        5063 |       0.1668971 |    0.2421489 |       0.0067154 |     0.5842386 |          1 |    NA |
 | A         |         1 |        3 |        5994 |       0.1596597 |    0.2712713 |       0.0058392 |     0.5632299 |          1 |    NA |
-| AM        |         1 |        3 |        4542 |       0.2322765 |    0.6845002 |       0.0237781 |     0.0594452 |          1 |    NA |
+| A         |         1 |        4 |        6763 |       0.1580659 |    0.3007541 |       0.0062103 |     0.5349697 |          1 |    NA |
+| A         |         1 |        5 |        5725 |       0.1613974 |    0.3395633 |       0.0076856 |     0.4913537 |          1 |    NA |
 
 Reminder for output from Experiment 1:
 
@@ -69,12 +69,12 @@ Transfer = 0 data for the ‘Selection = Yes’ treatment.
     ## # A tibble: 6 × 16
     ##   Treatment Replicate Transfer Total_count Experiment Selection Markers    plaCM
     ##   <chr>         <int>    <int>       <int>      <int> <chr>     <chr>      <dbl>
-    ## 1 A                 5        0        4895          1 Yes       Red / Yel… 0.231
-    ## 2 A                 1        0        4092          1 Yes       Red / Yel… 0.162
+    ## 1 A                 1        0        4092          1 Yes       Red / Yel… 0.162
+    ## 2 C                 1        0        6685          1 Yes       Yellow / … 0.189
     ## 3 A                 2        0        3719          1 Yes       Red / Yel… 0.190
-    ## 4 A                 3        0        5857          1 Yes       Red / Yel… 0.232
-    ## 5 A                 4        0        3516          1 Yes       Red / Yel… 0.265
-    ## 6 C                 5        0        4176          1 Yes       Yellow / … 0.210
+    ## 4 C                 2        0        4772          1 Yes       Yellow / … 0.205
+    ## 5 A                 3        0        5857          1 Yes       Red / Yel… 0.232
+    ## 6 C                 3        0        6963          1 Yes       Yellow / … 0.202
     ## # ℹ 8 more variables: chrCM <dbl>, `double / clumped` <dbl>, none <dbl>,
     ## #   pop <fct>, count_plaCM <dbl>, count_chrCM <dbl>, plaCM_ratio <dbl>,
     ## #   transf <dbl[,1]>
@@ -172,7 +172,7 @@ qqPlot(residuals(lmm_dat_1), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
     ## C.1 A.1 
-    ## 334 182
+    ##  40  21
 
 ``` r
 # timepoint zero are outliers, smaller than predicted, 
@@ -244,7 +244,7 @@ qqPlot(residuals(lmm_dat_1.2), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
     ## C.1 A.1 
-    ## 334 182
+    ##  40  21
 
 ``` r
 VarCorr(lmm_dat_1.2) # moderate correlation (0.6)
@@ -311,14 +311,7 @@ overdispersion.
 
 ``` r
 library(glmmTMB)
-```
 
-    ## Warning in checkDepPackageVersion(dep_pkg = "TMB"): Package version inconsistency detected.
-    ## glmmTMB was built with TMB version 1.9.3
-    ## Current TMB version is 1.9.4
-    ## Please re-install glmmTMB from source or restore original 'TMB' package (see '?reinstalling' for more information)
-
-``` r
 glmm_dat_1 <-glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf * Selection * Markers + (1 + transf|pop),
                      data=dat_1, family="betabinomial")
 
@@ -346,13 +339,13 @@ summary(glmm_dat_1)
     ## 
     ## Conditional model:
     ##                                          Estimate Std. Error z value Pr(>|z|)
-    ## (Intercept)                             -0.399370   0.047089  -8.481  < 2e-16
+    ## (Intercept)                             -0.399369   0.047089  -8.481  < 2e-16
     ## transf                                  -0.311759   0.022878 -13.627  < 2e-16
     ## SelectionYes                            -0.950353   0.055823 -17.024  < 2e-16
-    ## MarkersYellow / Red                      0.009862   0.066114   0.149    0.881
+    ## MarkersYellow / Red                      0.009861   0.066114   0.149    0.881
     ## transf:SelectionYes                     -0.538433   0.034026 -15.824  < 2e-16
-    ## transf:MarkersYellow / Red               0.205137   0.031897   6.431 1.27e-10
-    ## SelectionYes:MarkersYellow / Red         0.003932   0.077193   0.051    0.959
+    ## transf:MarkersYellow / Red               0.205137   0.031897   6.431 1.26e-10
+    ## SelectionYes:MarkersYellow / Red         0.003934   0.077193   0.051    0.959
     ## transf:SelectionYes:MarkersYellow / Red  0.012993   0.046890   0.277    0.782
     ##                                            
     ## (Intercept)                             ***
@@ -382,7 +375,7 @@ qqPlot(residuals(glmm_dat_1), envelope=0.99)
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
-    ## [1] 182 334
+    ## [1] 21 40
 
 ``` r
 # again, timepoint zero are outliers, smaller than predicted, 
@@ -464,7 +457,7 @@ qqPlot(residuals(glmm_dat_1.2), envelope=0.99)
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
-    ## [1] 182 334
+    ## [1] 21 40
 
 ``` r
 VarCorr(glmm_dat_1.2) # moderate correlation (0.61)
@@ -574,12 +567,12 @@ Plot the ratio of chrCM to plaCM. Add in the Transfer = 0 data for the
     ## # A tibble: 6 × 16
     ##   Treatment Replicate Transfer Total_count Experiment Selection Markers    plaCM
     ##   <chr>         <int>    <int>       <int>      <int> <chr>     <chr>      <dbl>
-    ## 1 B                 5        0        2105          1 Yes       Red / Yel… 0.247
-    ## 2 B                 1        0        2157          1 Yes       Red / Yel… 0.171
+    ## 1 B                 1        0        2157          1 Yes       Red / Yel… 0.171
+    ## 2 D                 1        0        5838          1 Yes       Yellow / … 0.190
     ## 3 B                 2        0        1954          1 Yes       Red / Yel… 0.225
-    ## 4 B                 3        0        2215          1 Yes       Red / Yel… 0.257
-    ## 5 B                 4        0        1781          1 Yes       Red / Yel… 0.218
-    ## 6 D                 5        0        4578          1 Yes       Yellow / … 0.202
+    ## 4 D                 2        0        4610          1 Yes       Yellow / … 0.193
+    ## 5 B                 3        0        2215          1 Yes       Red / Yel… 0.257
+    ## 6 D                 3        0        5637          1 Yes       Yellow / … 0.217
     ## # ℹ 8 more variables: chrCM <dbl>, `double / clumped` <dbl>,
     ## #   `pQBR103 only` <dbl>, pop <fct>, count_plaCM <dbl>, count_chrCM <dbl>,
     ## #   plaCM_ratio <dbl>, transf <dbl[,1]>
@@ -644,7 +637,7 @@ qqPlot(residuals(lmm_dat_2), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
 
     ## B.5 D.9 
-    ## 232 280
+    ## 165 310
 
 ``` r
 # again timepoint zero are outliers, smaller than predicted, 
@@ -716,7 +709,7 @@ qqPlot(residuals(lmm_dat_2.2), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
 
     ## B.5 D.9 
-    ## 232 280
+    ## 165 310
 
 ``` r
 VarCorr(lmm_dat_2.2) # moderate correlation (0.68)
@@ -808,12 +801,12 @@ summary(glmm_dat_2)
     ## 
     ## Conditional model:
     ##                                          Estimate Std. Error z value Pr(>|z|)
-    ## (Intercept)                             -0.379975   0.052323  -7.262 3.81e-13
+    ## (Intercept)                             -0.379974   0.052323  -7.262 3.81e-13
     ## transf                                  -0.302990   0.023321 -12.992  < 2e-16
-    ## SelectionYes                            -0.864975   0.059113 -14.633  < 2e-16
-    ## MarkersYellow / Red                     -0.067152   0.073088  -0.919    0.358
-    ## transf:SelectionYes                     -0.527207   0.034975 -15.074  < 2e-16
-    ## transf:MarkersYellow / Red               0.142160   0.032253   4.408 1.04e-05
+    ## SelectionYes                            -0.864977   0.059113 -14.633  < 2e-16
+    ## MarkersYellow / Red                     -0.067151   0.073088  -0.919    0.358
+    ## transf:SelectionYes                     -0.527209   0.034975 -15.074  < 2e-16
+    ## transf:MarkersYellow / Red               0.142161   0.032253   4.408 1.04e-05
     ## SelectionYes:MarkersYellow / Red        -0.065664   0.080223  -0.819    0.413
     ## transf:SelectionYes:MarkersYellow / Red  0.007194   0.047554   0.151    0.880
     ##                                            
@@ -844,7 +837,7 @@ qqPlot(residuals(glmm_dat_2), envelope=0.99, col=as.factor(dat_2$Transfer))
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-23-2.png)<!-- -->
 
-    ## [1] 232 280
+    ## [1] 165 310
 
 ``` r
 # A few outliers here, where expected values are larger/smaller than expected. 
@@ -910,7 +903,7 @@ qqPlot(residuals(glmm_dat_2.1), envelope=0.99)
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-26-2.png)<!-- -->
 
-    ## [1] 232 280
+    ## [1] 165 310
 
 ``` r
 # some departure from normality for residuals at the extremes
@@ -1013,14 +1006,14 @@ Plot the ratio of chrCM to plaCM.
 ```
 
     ## # A tibble: 6 × 15
-    ##   Treatment Replicate Transfer Total_count Experiment Ratio  plaCM  chrCM
-    ##   <chr>         <int>    <int>       <int>      <int> <fct>  <dbl>  <dbl>
-    ## 1 A                 1        2       11885          2 10:1  0.0300 0.0356
-    ## 2 A                 5        2       13219          2 1:10  0.350  0.459 
-    ## 3 A                 6        2       12609          2 10:1  0.0256 0.0337
-    ## 4 A                 6        2       10969          2 1:10  0.362  0.432 
-    ## 5 A                 1        2       10054          2 1:10  0.348  0.485 
-    ## 6 A                 2        2       11282          2 10:1  0.0240 0.0252
+    ##   Treatment Replicate Transfer Total_count Experiment Ratio plaCM chrCM
+    ##   <chr>         <int>    <int>       <int>      <int> <fct> <dbl> <dbl>
+    ## 1 A                 1        0       13337          2 none  0.438 0.411
+    ## 2 A                 1        1        8938          2 none  0.391 0.436
+    ## 3 A                 1        2        9203          2 none  0.365 0.510
+    ## 4 A                 1        3       12287          2 none  0.307 0.513
+    ## 5 A                 1        4        9347          2 none  0.278 0.561
+    ## 6 A                 1        5        7783          2 none  0.276 0.621
     ## # ℹ 7 more variables: `double / clumped` <dbl>, none <dbl>, pop <fct>,
     ## #   count_plaCM <dbl>, count_chrCM <dbl>, plaCM_ratio <dbl>, transf <dbl[,1]>
 
@@ -1087,7 +1080,7 @@ qqPlot(residuals(lmm_dat_3), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-32-2.png)<!-- -->
 
     ## 1.10:1 1.10:1 
-    ##    145     97
+    ##     36     34
 
 ``` r
 VarCorr(lmm_dat_3)
@@ -1223,7 +1216,7 @@ qqPlot(residuals(glmm_dat_3), envelope=0.99)
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-38-2.png)<!-- -->
 
-    ## [1] 145  60
+    ## [1]  36 176
 
 ``` r
 # Check for correlation between random effects
@@ -1356,14 +1349,14 @@ Plot the ratio of chrCM to plaCM, averaged over reps with SE.
 ```
 
     ## # A tibble: 6 × 15
-    ##   Treatment Replicate Transfer Total_count Experiment Ratio  plaCM pQBR57_chrCM
-    ##   <chr>         <int>    <int>       <int>      <int> <fct>  <dbl>        <dbl>
-    ## 1 B                 1        2       12255          2 10:1  0.0288       0.0486
-    ## 2 B                 5        2       14021          2 1:10  0.294        0.529 
-    ## 3 B                 6        2       14816          2 10:1  0.0281       0.0511
-    ## 4 B                 6        2       10638          2 1:10  0.311        0.514 
-    ## 5 B                 1        2       13487          2 1:10  0.338        0.370 
-    ## 6 B                 2        2       12311          2 10:1  0.0250       0.0408
+    ##   Treatment Replicate Transfer Total_count Experiment Ratio plaCM pQBR57_chrCM
+    ##   <chr>         <int>    <int>       <int>      <int> <fct> <dbl>        <dbl>
+    ## 1 B                 1        0       15911          2 none  0.404        0.452
+    ## 2 B                 1        1        9334          2 none  0.376        0.456
+    ## 3 B                 1        2       12312          2 none  0.336        0.549
+    ## 4 B                 1        3       15741          2 none  0.282        0.565
+    ## 5 B                 1        4       11593          2 none  0.230        0.586
+    ## 6 B                 1        5       12057          2 none  0.224        0.629
     ## # ℹ 7 more variables: `double / clumped` <dbl>, none <dbl>, pop <fct>,
     ## #   count_plaCM <dbl>, count_chrCM <dbl>, plaCM_ratio <dbl>, transf <dbl[,1]>
 
@@ -1496,21 +1489,21 @@ qqPlot(residuals(lmm_dat_4), envelope=0.99)
 ```
 
     ## 1.10:1 5.10:1 
-    ##    145    108
+    ##     36    178
 
 ``` r
 qqPlot(residuals(lmm_dat_4_poly2), envelope=0.99)
 ```
 
     ## 1.10:1 5.10:1 
-    ##    145    108
+    ##     36    178
 
 ``` r
 qqPlot(residuals(lmm_dat_4_poly3), envelope=0.99)
 ```
 
     ## 2.10:1 1.10:1 
-    ##    150    121
+    ##     72     35
 
 ``` r
 qqPlot(residuals(lmm_dat_4_poly4), envelope=0.99)
@@ -1519,7 +1512,7 @@ qqPlot(residuals(lmm_dat_4_poly4), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-47-5.png)<!-- -->
 
     ## 2.10:1 1.10:1 
-    ##    150    121
+    ##     72     35
 
 ``` r
 # all of these show substantial divergence from expected values
@@ -1529,7 +1522,7 @@ VarCorr(lmm_dat_4) #extremely low variance on random effects
 
     ## pop = pdLogChol(1) 
     ##             Variance     StdDev      
-    ## (Intercept) 2.962411e-10 1.721165e-05
+    ## (Intercept) 3.045336e-10 1.745089e-05
     ## Residual    1.066754e-01 3.266120e-01
 
 ``` r
@@ -1589,7 +1582,7 @@ qqPlot(residuals(lmm_dat_4_poly3), envelope=0.99, col=dat_4$Ratio)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-49-1.png)<!-- -->
 
     ## 2.10:1 1.10:1 
-    ##    150    121
+    ##     72     35
 
 …though there are still lots of outliers from the 10:1 ratio treatment.
 
@@ -1628,7 +1621,7 @@ summary(lmm_dat_4_poly3)
     ## 
     ## Fixed effects:  logitrat ~ poly(transf, 3, raw = TRUE) * Ratio 
     ##                                             Value  Std.Error  DF   t-value
-    ## (Intercept)                            -2.2562534 0.05585845 180 -40.39234
+    ## (Intercept)                            -2.2562534 0.05585846 180 -40.39234
     ## poly(transf, 3, raw = TRUE)1           -1.9649640 0.08609773 180 -22.82248
     ## poly(transf, 3, raw = TRUE)2            0.3297400 0.03754771 180   8.78190
     ## poly(transf, 3, raw = TRUE)3            0.4097069 0.04516707 180   9.07092
@@ -1761,7 +1754,7 @@ summary(lmm_dat_4_poly3)
     ## 
     ## Standardized Within-Group Residuals:
     ##         Min          Q1         Med          Q3         Max 
-    ## -4.77980073 -0.30949988 -0.03173836  0.25636455  4.65350891 
+    ## -4.77980074 -0.30949988 -0.03173836  0.25636455  4.65350891 
     ## 
     ## Number of Observations: 216
     ## Number of Groups: 24
@@ -1821,19 +1814,19 @@ par(mfrow=c(1,4))
 qqPlot(residuals(glmm_dat_4), envelope=0.99)
 ```
 
-    ## [1] 198 145
+    ## [1] 65 36
 
 ``` r
 qqPlot(residuals(glmm_dat_4_poly2), envelope=0.99)
 ```
 
-    ## [1] 198  30
+    ## [1] 65 67
 
 ``` r
 qqPlot(residuals(glmm_dat_4_poly3), envelope=0.99)
 ```
 
-    ## [1] 30 34
+    ## [1]  67 139
 
 ``` r
 qqPlot(residuals(glmm_dat_4_poly4), envelope=0.99)
@@ -1841,7 +1834,7 @@ qqPlot(residuals(glmm_dat_4_poly4), envelope=0.99)
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-52-5.png)<!-- -->
 
-    ## [1] 30  5
+    ## [1] 67 12
 
 ``` r
 # again, substantial divergence from expected values at the extremes
@@ -1882,7 +1875,7 @@ qqPlot(residuals(glmm_dat_4_poly3), envelope=0.99, col=dat_4$Ratio)
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-54-1.png)<!-- -->
 
-    ## [1] 30 34
+    ## [1]  67 139
 
 Looks better than the LMM, though still some divergence.
 
@@ -1929,22 +1922,22 @@ summary(glmm_dat_4_poly3)
     ## 
     ## Conditional model:
     ##                                        Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)                            -2.23958    0.05270  -42.49  < 2e-16 ***
+    ## (Intercept)                            -2.23957    0.05270  -42.49  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)1           -1.99489    0.08260  -24.15  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)2            0.32673    0.03547    9.21  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)3            0.42944    0.04152   10.34  < 2e-16 ***
-    ## Ratio1:1                                1.18057    0.06441   18.33  < 2e-16 ***
-    ## Ratio1:10                               1.23697    0.06374   19.41  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)3            0.42943    0.04152   10.34  < 2e-16 ***
+    ## Ratio1:1                                1.18056    0.06441   18.33  < 2e-16 ***
+    ## Ratio1:10                               1.23696    0.06374   19.41  < 2e-16 ***
     ## Rationone                               1.30906    0.06339   20.65  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)1:Ratio1:1   1.28899    0.09959   12.94  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)1:Ratio1:1   1.28898    0.09959   12.94  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)2:Ratio1:1  -0.40500    0.04470   -9.06  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)3:Ratio1:1  -0.48161    0.05162   -9.33  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)1:Ratio1:10  1.30737    0.09793   13.35  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)2:Ratio1:10 -0.27789    0.04282   -6.49 8.63e-11 ***
+    ## poly(transf, 3, raw = TRUE)1:Ratio1:10  1.30737    0.09792   13.35  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)2:Ratio1:10 -0.27789    0.04282   -6.49 8.64e-11 ***
     ## poly(transf, 3, raw = TRUE)3:Ratio1:10 -0.40051    0.05015   -7.99 1.38e-15 ***
     ## poly(transf, 3, raw = TRUE)1:Rationone  1.39730    0.09730   14.36  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)2:Rationone -0.27338    0.04230   -6.46 1.03e-10 ***
-    ## poly(transf, 3, raw = TRUE)3:Rationone -0.40886    0.04965   -8.23  < 2e-16 ***
+    ## poly(transf, 3, raw = TRUE)2:Rationone -0.27337    0.04230   -6.46 1.03e-10 ***
+    ## poly(transf, 3, raw = TRUE)3:Rationone -0.40885    0.04965   -8.23  < 2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -2010,14 +2003,14 @@ Plot the ratio of chrCM to plaCM, averaged over reps with SE.
 ```
 
     ## # A tibble: 6 × 15
-    ##   Treatment Replicate Transfer Total_count Experiment Ratio  plaCM pQBR57
-    ##   <chr>         <int>    <int>       <int>      <int> <fct>  <dbl>  <dbl>
-    ## 1 C                 1        2       11866          2 10:1  0.0307 0.0126
-    ## 2 C                 5        2       14095          2 1:10  0.540  0.225 
-    ## 3 C                 6        2       14547          2 10:1  0.0292 0.0201
-    ## 4 C                 6        2       10736          2 1:10  0.529  0.245 
-    ## 5 C                 1        2       13315          2 1:10  0.553  0.187 
-    ## 6 C                 2        2       12384          2 10:1  0.0220 0.0175
+    ##   Treatment Replicate Transfer Total_count Experiment Ratio plaCM pQBR57
+    ##   <chr>         <int>    <int>       <int>      <int> <fct> <dbl>  <dbl>
+    ## 1 C                 1        0       11334          2 none  0.500 0.356 
+    ## 2 C                 1        1       10381          2 none  0.506 0.320 
+    ## 3 C                 1        2       10037          2 none  0.630 0.255 
+    ## 4 C                 1        3       11607          2 none  0.705 0.176 
+    ## 5 C                 1        4        6934          2 none  0.756 0.123 
+    ## 6 C                 1        5        9551          2 none  0.829 0.0872
     ## # ℹ 7 more variables: `double / clumped` <dbl>, none <dbl>, pop <fct>,
     ## #   count_plaCM <dbl>, count_pQBR57 <dbl>, plaCM_ratio <dbl>, transf <dbl[,1]>
 
@@ -2148,7 +2141,7 @@ qqPlot(residuals(lmm_dat_5), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-62-5.png)<!-- -->
 
     ## 2.1:10 1.10:1 
-    ##    151    145
+    ##     54     36
 
 ``` r
 qqPlot(residuals(lmm_dat_5_poly2), envelope=0.99)
@@ -2157,7 +2150,7 @@ qqPlot(residuals(lmm_dat_5_poly2), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-62-6.png)<!-- -->
 
     ## 2.1:10 1.10:1 
-    ##    151    145
+    ##     54     36
 
 ``` r
 qqPlot(residuals(lmm_dat_5_poly3), envelope=0.99)
@@ -2166,7 +2159,7 @@ qqPlot(residuals(lmm_dat_5_poly3), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-62-7.png)<!-- -->
 
     ## 2.1:10 1.10:1 
-    ##    151    145
+    ##     54     36
 
 ``` r
 qqPlot(residuals(lmm_dat_5_poly4), envelope=0.99)
@@ -2175,7 +2168,7 @@ qqPlot(residuals(lmm_dat_5_poly4), envelope=0.99)
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-62-8.png)<!-- -->
 
     ## 2.1:10 1.10:1 
-    ##    151    145
+    ##     54     36
 
 ``` r
 # again poor fit at the extremes
@@ -2185,7 +2178,7 @@ VarCorr(lmm_dat_5)
 
     ## pop = pdLogChol(1) 
     ##             Variance     StdDev      
-    ## (Intercept) 2.091314e-09 4.573089e-05
+    ## (Intercept) 2.091272e-09 4.573043e-05
     ## Residual    3.291991e-01 5.737587e-01
 
 ``` r
@@ -2536,19 +2529,19 @@ par(mfrow=c(1,4))
 qqPlot(residuals(glmm_dat_5), envelope=0.99)
 ```
 
-    ## [1] 151  32
+    ## [1]  54 103
 
 ``` r
 qqPlot(residuals(glmm_dat_5_poly2), envelope=0.99)
 ```
 
-    ## [1]  90 151
+    ## [1] 60 54
 
 ``` r
 qqPlot(residuals(glmm_dat_5_poly3), envelope=0.99)
 ```
 
-    ## [1] 151  87
+    ## [1]  54 204
 
 ``` r
 qqPlot(residuals(glmm_dat_5_poly4), envelope=0.99)
@@ -2556,7 +2549,7 @@ qqPlot(residuals(glmm_dat_5_poly4), envelope=0.99)
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-66-5.png)<!-- -->
 
-    ## [1] 151  90
+    ## [1] 54 60
 
 ``` r
 # again, substantial divergence from expected values at the extremes
@@ -2631,25 +2624,25 @@ summary(glmm_dat_5_poly4)
     ## Conditional model:
     ##                                        Estimate Std. Error z value Pr(>|z|)    
     ## (Intercept)                            -0.92370    0.10022  -9.217  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)1           -2.33356    0.16805 -13.886  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2           -0.32324    0.25928  -1.247 0.212519    
-    ## poly(transf, 4, raw = TRUE)3            0.57899    0.08719   6.641 3.12e-11 ***
-    ## poly(transf, 4, raw = TRUE)4            0.04817    0.10575   0.456 0.648722    
-    ## Ratio1:1                                1.62491    0.13626  11.925  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)1           -2.33357    0.16805 -13.886  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2           -0.32324    0.25928  -1.247 0.212505    
+    ## poly(transf, 4, raw = TRUE)3            0.57899    0.08718   6.641 3.12e-11 ***
+    ## poly(transf, 4, raw = TRUE)4            0.04818    0.10575   0.456 0.648673    
+    ## Ratio1:1                                1.62492    0.13626  11.925  < 2e-16 ***
     ## Ratio1:10                               2.55242    0.15007  17.008  < 2e-16 ***
     ## Rationone                               2.56306    0.15040  17.042  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)1:Ratio1:1   0.99063    0.20655   4.796 1.62e-06 ***
+    ## poly(transf, 4, raw = TRUE)1:Ratio1:1   0.99065    0.20655   4.796 1.62e-06 ***
     ## poly(transf, 4, raw = TRUE)2:Ratio1:1  -1.11728    0.33130  -3.372 0.000745 ***
-    ## poly(transf, 4, raw = TRUE)3:Ratio1:1  -0.14087    0.10697  -1.317 0.187877    
+    ## poly(transf, 4, raw = TRUE)3:Ratio1:1  -0.14088    0.10697  -1.317 0.187843    
     ## poly(transf, 4, raw = TRUE)4:Ratio1:1   0.36702    0.13318   2.756 0.005853 ** 
-    ## poly(transf, 4, raw = TRUE)1:Ratio1:10  3.28345    0.22611  14.521  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2:Ratio1:10  0.20082    0.35728   0.562 0.574064    
-    ## poly(transf, 4, raw = TRUE)3:Ratio1:10 -0.69993    0.11685  -5.990 2.10e-09 ***
-    ## poly(transf, 4, raw = TRUE)4:Ratio1:10 -0.08994    0.14331  -0.628 0.530281    
-    ## poly(transf, 4, raw = TRUE)1:Rationone  3.35745    0.23217  14.461  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2:Rationone  0.15855    0.36336   0.436 0.662581    
-    ## poly(transf, 4, raw = TRUE)3:Rationone -0.59781    0.12363  -4.835 1.33e-06 ***
-    ## poly(transf, 4, raw = TRUE)4:Rationone  0.01111    0.14767   0.075 0.940002    
+    ## poly(transf, 4, raw = TRUE)1:Ratio1:10  3.28347    0.22611  14.521  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2:Ratio1:10  0.20081    0.35728   0.562 0.574075    
+    ## poly(transf, 4, raw = TRUE)3:Ratio1:10 -0.69994    0.11685  -5.990 2.10e-09 ***
+    ## poly(transf, 4, raw = TRUE)4:Ratio1:10 -0.08994    0.14331  -0.628 0.530269    
+    ## poly(transf, 4, raw = TRUE)1:Rationone  3.35747    0.23217  14.461  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2:Rationone  0.15857    0.36336   0.436 0.662552    
+    ## poly(transf, 4, raw = TRUE)3:Rationone -0.59782    0.12363  -4.835 1.33e-06 ***
+    ## poly(transf, 4, raw = TRUE)4:Rationone  0.01111    0.14767   0.075 0.940026    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -2663,7 +2656,7 @@ between the 10:1 and 1:1 treatments.
 Load up data and generate overview plot.
 
 ``` r
-dat_6 <- read.csv("data/relativefitness_data.txt", header=TRUE, sep=" ") %>% 
+dat_6 <- read.csv("data/1_RelativeFitnessData.csv", header=TRUE) %>% 
   mutate(chr = ifelse(host == "SBW25d4242", "SBW25::chrCM", host),
          pla = ifelse(plasmid == "pQBR57d0059", "pQBR57::plaCM", plasmid),
          ref_chr = ifelse(reference_host == "SBW25d4242", "SBW25::chrCM", reference_host),
@@ -2740,6 +2733,17 @@ dev.off()
     ## quartz_off_screen 
     ##                 2
 
+``` r
+tiff("./figs/Fig2.tiff", width=3.2, height=3.6, units="in", res=300)
+p6 + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8))
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
 #### Analysis
 
 Analyse the data shown in the figure. Each panel should be analysed
@@ -2797,7 +2801,7 @@ fligner.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::c
     ##  Fligner-Killeen test of homogeneity of variances
     ## 
     ## data:  relative_fitness by groups
-    ## Fligner-Killeen:med chi-squared = 0.78485, df = 5, p-value = 0.978
+    ## Fligner-Killeen:med chi-squared = 0.78489, df = 5, p-value = 0.978
 
 ``` r
 leveneTest(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
@@ -2931,7 +2935,7 @@ Compare all measurements against 0.
 | reference                   | test                 | selection |       coef |  df |   t_value |   p_value |     p_adj |
 |:----------------------------|:---------------------|:----------|-----------:|----:|----------:|----------:|----------:|
 | SBW25(pQBR57)               | SBW25::chrCM(pQBR57) | 0         |  0.9593259 |   9 | 23.495140 | 0.0000000 | 0.0000000 |
-| SBW25(pQBR57)               | SBW25::chrCM(pQBR57) | 40        |  1.9633452 |   9 | 52.228528 | 0.0000000 | 0.0000000 |
+| SBW25(pQBR57)               | SBW25::chrCM(pQBR57) | 40        |  1.9633452 |   9 | 52.228527 | 0.0000000 | 0.0000000 |
 | SBW25(pQBR57::plaCM)        | SBW25::chrCM(pQBR57) | 0         |  0.1333801 |   9 |  2.749415 | 0.0224983 | 0.0449967 |
 | SBW25(pQBR57::plaCM)        | SBW25::chrCM(pQBR57) | 40        |  0.4259115 |   9 |  9.864781 | 0.0000040 | 0.0000080 |
 | SBW25::chrCM(pQBR57::plaCM) | SBW25::chrCM(pQBR57) | 0         | -0.0991252 |   9 | -1.864956 | 0.0950599 | 0.1901198 |
@@ -3013,7 +3017,7 @@ Short (4h) conjugation experiments were run using strains that were in
 the exponential phase of growth.
 
 ``` r
-counts <- read.csv("./data/conjugation_data.csv", header=TRUE, sep=",") %>% filter(crop != "x") %>%
+counts <- read.csv("./data/5_ConjugationData.csv", header=TRUE, sep=",") %>% filter(crop != "x") %>%
   select(!(c(notes, crop))) %>%
   mutate(white = (1000/spread) * (10^dilution) * count_white,
          blue = (1000/spread) * (10^dilution) * count_blue)

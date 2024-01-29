@@ -1,6 +1,8 @@
 # COMPMUT_dynamics
 Ecological dynamics of plasmid compensatory mutations: data and analysis.
 
+Associated with the preprint manuscript ***Superiority of chromosomal compared to plasmid-encoded compensatory mutations***, [doi: 10.1101/2024.01.15.575717](https://www.biorxiv.org/content/10.1101/2024.01.15.575717v1)
+
 Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve Paterson, Ellie Harrison, Michael A. Brockhurst, James P.J. Hall.
 
 ---
@@ -23,10 +25,23 @@ Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve
 
 #### Raw data
 
-1. Relative fitness data: ([`relativefitness_data.txt`](./data/relativefitness_data.txt))
-2. Dynamics (fraction) data: ([`fraction_data.txt`](./data/fraction_data.txt))
-3. Measured parameters: ([`parameters.txt`](./data/parameters.txt)); associated growth curve data used to calculate alpha ([`p_free_growthcurve.txt`](./data/p_free_growthcurve.txt))
-4. Conjugation rate data: ([`conjugation_data.csv`](./data/conjugation_data.csv))
+1. Relative fitness data: ([`1_RelativeFitnessData.csv`](./data/1_RelativeFitnessData.csv)). A comma-delimited text file in which columns indicate: an arbitrary treatment code (`ttmt`) describing the combination of test and reference strains, an arbitrary ID code (`ID`) which further describes whether the combination was subject to mercury selection (‘H’) or not, a replicate number (`rep`) coded 1-10, the concentration of mercury chloride used for the competition in µM (`mercury`), the counts of yellow-fluorescing competitors at the start (`Count.Y0`), the counts of yellow-fluorescing competitors at the end (`Count.Y24`), the count of red-fluorescing competitors at the start (`Count.R0`), the count of red-fluorescing competitors at the end (`Count.R24`), the relative fitness calculated as the ratio of Malthusian parameters (`RF_w`), the relative fitness calculated as the difference of Malthusian parameters (`RF_r`), the test strain identity (`strain`), the test strain chromosome genotype (`host`), the test strain fluorescent label (`host.label`), the test strain plasmid genotype (`plasmid`), the reference strain chromosome genotype (`reference_host`), the reference strain fluorescent label (`reference_host_label`), the reference plasmid genotype (`reference_plasmid`) and the reference strain identity (`reference`). 
+2. Dynamics (fraction) data: ([`2_FractionData.csv`](./data/2_FractionData.csv)). A comma-delimited text file in which columns indicate: an arbitrary treatment code (`Treatment`) describing the experimental conditions, a replicate number (`Replicate`) coded 1-10, the transfer number (`transfer`) in days from 0 (start of the experiment) to 8, the total count (`Total_count`), the fractions of the Yellow, Red, Orange, and Blue populations (`Fraction_Yellow`, `Fraction_Red`, `Fraction_Orange`, `Fraction_Blue`, respectively), an arbitrary coding for Experiment (`Experiment`) in which ‘1’ refers to the experiments presented in Figures 3 and 4, and ‘2’ refers to the experiments presented in Figures 5-7, and the starting ratio of plasmid-free competitors (`Ratio`, provided only for experiment 2 in which Ratio was being varied).
+   - For Experiment 1, treatment codes were as follows:
+     - A: SBW25 ; SBW25(pQBR57∆PQBR57_0059::GFP) ; SBW25∆PFLU4242::dTomato(pQBR57)
+     - AM: SBW25 ; SBW25(pQBR57∆PQBR57_0059::GFP) ; SBW25∆PFLU4242::dTomato(pQBR57) + Mercury
+     - C: SBW25.GmR ; SBW25(pQBR57∆PQBR57_0059::tdTomato) ; SBW25∆PFLU4242::YFP(pQBR57)
+     - CM: SBW25.GmR ; SBW25(pQBR57∆PQBR57_0059::tdTomato) ; SBW25∆PFLU4242::YFP(pQBR57) + Mercury
+     - Therefore: For A and AM, chrCM = Fraction_Yellow and plaCM = Fraction_Red. For C and CM, chrCM = Fraction_Red and plaCM = Fraction_Yellow. In both cases, Fraction_Blue is SBW25 i.e. plasmid-free uncompensated competitors.
+     - Treatments B, BM, D, and DM were as A, AM, C, and CM respectively, for Fractions Yellow and Red. However, here Fraction_Blue is SBW25(pQBR103).
+   - For Experiment 2, treatment codes were as follows:
+     - A: SBW25 ; SBW25(pQBR57∆pQBR57_0059::GFP) ; SBW25∆PFLU4242::dTomato(pQBR57)
+     - B: SBW25 ; SBW25(pQBR57∆pQBR57_0059::GFP) ; SBW25∆PFLU4242(pQBR57::dTomato)
+     - C: SBW25 ; SBW25(pQBR57∆pQBR57_0059::GFP) ; SBW25(pQBR57::dTomato)
+3. Measured parameters: 
+   - [`3_Parameters.txt`](./data/3_Parameters.txt), a tab-delimited text file indicating calculated parameters that is also represented in Table S1
+   - [`4_WTGrowthCurve.csv`](./data/4_WTGrowthCurve.csv), associated growth curve data used to calculate alpha for `3_Parameters.txt` and Table S1. A comma-delimited text file in which columns indicate the well of the 96-well plate being measured (`well`), the replicate (`replicate`) a-k, the measurement cycle (`cycle`, measurements were taken every 15 minutes), and the optical density (`value`) as determined by a Tecan Infinite 200 Pro Nano.
+4. Data used to calculate conjugation rates ([`5_ConjugationData.csv`](./data/5_ConjugationData.csv)). A comma-delimited text file in which columns indicate the strain being tested (`strain`, either pQBR57 [pQ57] or pQBR57∆PQBR57_0059 [delta_59]), the time of measurement in hours (`time_h`), the replicate a-f (`rep`), the media on which samples were plated (`media`, which can be used to determine whether counts are of donors, recipients, or transconjugants), the –log~10~ dilution factor of the plated sample (`dilution`) , the volume spread (`spread`), the counts of white or blue colonies (`count_white`, `count_blue`, which refer to recipients and donors respectively), notes on what the counts refer to (`notes`), and whether the data were discarded due to a more accurate measurement from the same culture (`crop`: measurements were cropped by inserting a ‘x’ in this column if more accurate CFU counts were available for this sample). 
 
 ---
 

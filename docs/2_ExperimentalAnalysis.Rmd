@@ -1,6 +1,6 @@
 ---
 title: "COMPMUT Dynamics 2: Data analysis"
-date: "compiled November 2023"
+date: "compiled Jan 2024"
 author: "jpjh"
 output: rmarkdown::github_document
 editor_options: 
@@ -30,7 +30,7 @@ theme_set(theme_github())
 Quick look at data:
 
 ```{r}
-(df <- read.table("./data/fraction_data.txt", header=TRUE, quote='""')) %>% head() %>% kable()
+(df <- read.csv("./data/2_FractionData.csv", header=TRUE)) %>% head() %>% kable()
 ```
 
 Reminder for output from Experiment 1:
@@ -1073,7 +1073,7 @@ As with the LMM, we see changes in the dynamic over time when there are more opp
 Load up data and generate overview plot.
 
 ```{r}
-dat_6 <- read.csv("data/relativefitness_data.txt", header=TRUE, sep=" ") %>% 
+dat_6 <- read.csv("data/1_RelativeFitnessData.csv", header=TRUE) %>% 
   mutate(chr = ifelse(host == "SBW25d4242", "SBW25::chrCM", host),
          pla = ifelse(plasmid == "pQBR57d0059", "pQBR57::plaCM", plasmid),
          ref_chr = ifelse(reference_host == "SBW25d4242", "SBW25::chrCM", reference_host),
@@ -1129,6 +1129,12 @@ pd <- position_dodge(width=0.4)
   theme(legend.position=c(0.9,0.8)))
 
 png("./figs/p6.png", width=3.2, height=3.6, units="in", res=300)
+p6 + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8))
+dev.off()
+
+tiff("./figs/Fig2.tiff", width=3.2, height=3.6, units="in", res=300)
 p6 + theme_pub() + theme(legend.position="bottom") +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   theme(legend.position=c(0.9,0.8))
@@ -1261,7 +1267,7 @@ After Bonferroni adjustment, plaCM is significantly fitter than uncompensated, b
 Short (4h) conjugation experiments were run using strains that were in the exponential phase of growth. 
 
 ```{r}
-counts <- read.csv("./data/conjugation_data.csv", header=TRUE, sep=",") %>% filter(crop != "x") %>%
+counts <- read.csv("./data/5_ConjugationData.csv", header=TRUE, sep=",") %>% filter(crop != "x") %>%
   select(!(c(notes, crop))) %>%
   mutate(white = (1000/spread) * (10^dilution) * count_white,
          blue = (1000/spread) * (10^dilution) * count_blue)

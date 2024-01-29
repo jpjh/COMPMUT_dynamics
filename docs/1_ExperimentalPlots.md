@@ -1,7 +1,7 @@
 COMPMUT Dynamics 1: Generation of dynamics figures
 ================
 jpjh
-compiled November 2023
+compiled Jan 2024
 
 ### Read in and pre-process data
 
@@ -10,7 +10,7 @@ Plots for the dynamics experiments.
 Read in data frame.
 
 ``` r
-df <- read.table("./data/fraction_data.txt", header=TRUE, quote='""')
+df <- read.csv("./data/2_FractionData.csv", header=TRUE)
 
 summary(df) %>% kable()
 ```
@@ -47,13 +47,11 @@ Experiment 1 part 1: Effect of selection.
 
 Treatments under consideration:
 
-- A SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.GFP ; SBW25d4242.GmR.dTomato
-  pQBR57
-- AM SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.GFP ; SBW25d4242.GmR.dTomato
+- A SBW25.GmR ; SBW25.GmR pQBR57d59.GFP ; SBW25d4242.GmR.dTomato pQBR57
+- AM SBW25.GmR ; SBW25.GmR pQBR57d59.GFP ; SBW25d4242.GmR.dTomato
   pQBR57 + Mercury
-- C SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.tdTomato ; SBW25d4242.GmR.YFP
-  pQBR57
-- CM SBW25.GmR ; SBW25.GmR pQBR57d59.GmR.tdTomato ; SBW25d4242.GmR.YFP
+- C SBW25.GmR ; SBW25.GmR pQBR57d59.tdTomato ; SBW25d4242.GmR.YFP pQBR57
+- CM SBW25.GmR ; SBW25.GmR pQBR57d59.tdTomato ; SBW25d4242.GmR.YFP
   pQBR57 + Mercury
 
 For A and AM, chrCM = Fraction_Yellow and plaCM = Fraction_Red. For C
@@ -80,16 +78,16 @@ and CM, chrCM = Fraction_Red and plaCM = Fraction_Yellow.
     ## # A tibble: 1,360 × 11
     ##    Treatment Replicate Transfer Total_count Experiment Ratio Fluorescence
     ##    <chr>         <int>    <int>       <int>      <int> <dbl> <chr>       
-    ##  1 AM                4        3        4540          1    NA Yellow      
-    ##  2 AM                4        3        4540          1    NA Red         
-    ##  3 AM                4        3        4540          1    NA Orange      
-    ##  4 AM                4        3        4540          1    NA Blue        
-    ##  5 A                 5        3        4764          1    NA Yellow      
-    ##  6 A                 5        3        4764          1    NA Red         
-    ##  7 A                 5        3        4764          1    NA Orange      
-    ##  8 A                 5        3        4764          1    NA Blue        
-    ##  9 AM                5        3        3618          1    NA Yellow      
-    ## 10 AM                5        3        3618          1    NA Red         
+    ##  1 A                 1        0        4092          1    NA Yellow      
+    ##  2 A                 1        0        4092          1    NA Red         
+    ##  3 A                 1        0        4092          1    NA Orange      
+    ##  4 A                 1        0        4092          1    NA Blue        
+    ##  5 A                 1        1        5345          1    NA Yellow      
+    ##  6 A                 1        1        5345          1    NA Red         
+    ##  7 A                 1        1        5345          1    NA Orange      
+    ##  8 A                 1        1        5345          1    NA Blue        
+    ##  9 A                 1        2        5063          1    NA Yellow      
+    ## 10 A                 1        2        5063          1    NA Red         
     ## # ℹ 1,350 more rows
     ## # ℹ 4 more variables: Fraction <dbl>, Population <fct>, Selection <chr>,
     ## #   Markers <chr>
@@ -170,6 +168,15 @@ dev.off()
     ##                 2
 
 ``` r
+tiff("./figs/Fig3.tiff", width=3.6, height=2.4, units="in", res=300)
+p1_summ + theme_pub() + theme(legend.position="bottom")
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
 png("./figs/p1_supp.png", width=7.2, height=4, units="in", res=300)
 p1_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
@@ -201,16 +208,16 @@ Now experiment 2.
     ## # A tibble: 1,360 × 11
     ##    Treatment Replicate Transfer Total_count Experiment Ratio Fluorescence
     ##    <chr>         <int>    <int>       <int>      <int> <dbl> <chr>       
-    ##  1 BM                4        3        5392          1    NA Yellow      
-    ##  2 BM                4        3        5392          1    NA Red         
-    ##  3 BM                4        3        5392          1    NA Orange      
-    ##  4 BM                4        3        5392          1    NA Blue        
-    ##  5 B                 5        3        5117          1    NA Yellow      
-    ##  6 B                 5        3        5117          1    NA Red         
-    ##  7 B                 5        3        5117          1    NA Orange      
-    ##  8 B                 5        3        5117          1    NA Blue        
-    ##  9 BM                5        3        4241          1    NA Yellow      
-    ## 10 BM                5        3        4241          1    NA Red         
+    ##  1 B                 1        0        2157          1    NA Yellow      
+    ##  2 B                 1        0        2157          1    NA Red         
+    ##  3 B                 1        0        2157          1    NA Orange      
+    ##  4 B                 1        0        2157          1    NA Blue        
+    ##  5 B                 1        1        4901          1    NA Yellow      
+    ##  6 B                 1        1        4901          1    NA Red         
+    ##  7 B                 1        1        4901          1    NA Orange      
+    ##  8 B                 1        1        4901          1    NA Blue        
+    ##  9 B                 1        2        5140          1    NA Yellow      
+    ## 10 B                 1        2        5140          1    NA Red         
     ## # ℹ 1,350 more rows
     ## # ℹ 4 more variables: Fraction <dbl>, Population <fct>, Selection <chr>,
     ## #   Markers <chr>
@@ -290,6 +297,15 @@ dev.off()
     ##                 2
 
 ``` r
+tiff("./figs/Fig4.tiff", width=3.6, height=2.4, units="in", res=300)
+p2_summ + theme_pub() + theme(legend.position="bottom")
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
 png("./figs/p2_supp.png", width=7.2, height=4, units="in", res=300)
 p2_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
@@ -339,16 +355,16 @@ First head-to-head CMs.
     ## # A tibble: 864 × 9
     ##    Treatment Replicate Transfer Total_count Experiment Ratio Fluorescence
     ##    <chr>         <int>    <int>       <int>      <int> <fct> <chr>       
-    ##  1 A                 1        2       11885          2 10:1  Yellow      
-    ##  2 A                 1        2       11885          2 10:1  Red         
-    ##  3 A                 1        2       11885          2 10:1  Orange      
-    ##  4 A                 1        2       11885          2 10:1  Blue        
-    ##  5 A                 5        2       13219          2 1:10  Yellow      
-    ##  6 A                 5        2       13219          2 1:10  Red         
-    ##  7 A                 5        2       13219          2 1:10  Orange      
-    ##  8 A                 5        2       13219          2 1:10  Blue        
-    ##  9 A                 6        2       12609          2 10:1  Yellow      
-    ## 10 A                 6        2       12609          2 10:1  Red         
+    ##  1 A                 1        0       13337          2 none  Yellow      
+    ##  2 A                 1        0       13337          2 none  Red         
+    ##  3 A                 1        0       13337          2 none  Orange      
+    ##  4 A                 1        0       13337          2 none  Blue        
+    ##  5 A                 1        1        8938          2 none  Yellow      
+    ##  6 A                 1        1        8938          2 none  Red         
+    ##  7 A                 1        1        8938          2 none  Orange      
+    ##  8 A                 1        1        8938          2 none  Blue        
+    ##  9 A                 1        2        9203          2 none  Yellow      
+    ## 10 A                 1        2        9203          2 none  Red         
     ## # ℹ 854 more rows
     ## # ℹ 2 more variables: Fraction <dbl>, Population <fct>
 
@@ -398,6 +414,15 @@ dev.off()
     ##                 2
 
 ``` r
+tiff("./figs/Fig5.tiff", width=4.6, height=2.4, units="in", res=300)
+p3 + theme_pub() + theme(legend.position="bottom")
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
 png("./figs/p3_supp.png", width=4.6, height=7.2, units="in", res=300)
 p3_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
@@ -427,16 +452,16 @@ Then the plasmids from the corresponding CMs:
     ## # A tibble: 864 × 9
     ##    Treatment Replicate Transfer Total_count Experiment Ratio Fluorescence
     ##    <chr>         <int>    <int>       <int>      <int> <fct> <chr>       
-    ##  1 B                 1        2       12255          2 10:1  Yellow      
-    ##  2 B                 1        2       12255          2 10:1  Red         
-    ##  3 B                 1        2       12255          2 10:1  Orange      
-    ##  4 B                 1        2       12255          2 10:1  Blue        
-    ##  5 B                 5        2       14021          2 1:10  Yellow      
-    ##  6 B                 5        2       14021          2 1:10  Red         
-    ##  7 B                 5        2       14021          2 1:10  Orange      
-    ##  8 B                 5        2       14021          2 1:10  Blue        
-    ##  9 B                 6        2       14816          2 10:1  Yellow      
-    ## 10 B                 6        2       14816          2 10:1  Red         
+    ##  1 B                 1        0       15911          2 none  Yellow      
+    ##  2 B                 1        0       15911          2 none  Red         
+    ##  3 B                 1        0       15911          2 none  Orange      
+    ##  4 B                 1        0       15911          2 none  Blue        
+    ##  5 B                 1        1        9334          2 none  Yellow      
+    ##  6 B                 1        1        9334          2 none  Red         
+    ##  7 B                 1        1        9334          2 none  Orange      
+    ##  8 B                 1        1        9334          2 none  Blue        
+    ##  9 B                 1        2       12312          2 none  Yellow      
+    ## 10 B                 1        2       12312          2 none  Red         
     ## # ℹ 854 more rows
     ## # ℹ 2 more variables: Fraction <dbl>, Population <fct>
 
@@ -486,6 +511,15 @@ dev.off()
     ##                 2
 
 ``` r
+tiff("./figs/Fig6.tiff", width=4.6, height=2.4, units="in", res=300)
+p4 + theme_pub() + theme(legend.position="bottom")
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
 png("./figs/p4_supp.png", width=4.6, height=7.2, units="in", res=300)
 p4_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
@@ -515,16 +549,16 @@ And finally the wild-type vs. plaCM
     ## # A tibble: 864 × 9
     ##    Treatment Replicate Transfer Total_count Experiment Ratio Fluorescence
     ##    <chr>         <int>    <int>       <int>      <int> <fct> <chr>       
-    ##  1 C                 1        2       11866          2 10:1  Yellow      
-    ##  2 C                 1        2       11866          2 10:1  Red         
-    ##  3 C                 1        2       11866          2 10:1  Orange      
-    ##  4 C                 1        2       11866          2 10:1  Blue        
-    ##  5 C                 5        2       14095          2 1:10  Yellow      
-    ##  6 C                 5        2       14095          2 1:10  Red         
-    ##  7 C                 5        2       14095          2 1:10  Orange      
-    ##  8 C                 5        2       14095          2 1:10  Blue        
-    ##  9 C                 6        2       14547          2 10:1  Yellow      
-    ## 10 C                 6        2       14547          2 10:1  Red         
+    ##  1 C                 1        0       11334          2 none  Yellow      
+    ##  2 C                 1        0       11334          2 none  Red         
+    ##  3 C                 1        0       11334          2 none  Orange      
+    ##  4 C                 1        0       11334          2 none  Blue        
+    ##  5 C                 1        1       10381          2 none  Yellow      
+    ##  6 C                 1        1       10381          2 none  Red         
+    ##  7 C                 1        1       10381          2 none  Orange      
+    ##  8 C                 1        1       10381          2 none  Blue        
+    ##  9 C                 1        2       10037          2 none  Yellow      
+    ## 10 C                 1        2       10037          2 none  Red         
     ## # ℹ 854 more rows
     ## # ℹ 2 more variables: Fraction <dbl>, Population <fct>
 
@@ -566,6 +600,15 @@ And the summary figure:
 
 ``` r
 png("./figs/p5.png", width=4.6, height=2.4, units="in", res=300)
+p5 + theme_pub() + theme(legend.position="bottom")
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+tiff("./figs/Fig7.tiff", width=4.6, height=2.4, units="in", res=300)
 p5 + theme_pub() + theme(legend.position="bottom")
 dev.off()
 ```

@@ -41,7 +41,7 @@ It describes:
 See `3_ParameterEstimation.Rmd` for details.
 
 ```{r}
-(parameters <- read.table("./data/parameters.txt", header=TRUE)) %>% kable(digits = 20)
+(parameters <- read.table("./data/3_Parameters.txt", header=TRUE)) %>% kable(digits = 20)
 ```
 
 ### Analytical predictions
@@ -692,6 +692,11 @@ doubleplot <- (p_transfer_gamma_adj_fig_crop + theme_pub() +
 png("./figs/p41.png", width=5.2, height=3.6, units="in", res=300)
 doubleplot
 dev.off()
+
+tiff("./figs/Fig8.tiff", width=5.2, height=3.6, units="in", res=300)
+doubleplot
+dev.off()
+
 ```
 
 This plot shows the full dynamics in the bottom panels, revealing the damped oscillatory behaviour, and the short-term dynamics equivalent to the experimental results in the top panels. 
