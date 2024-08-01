@@ -1,7 +1,7 @@
 COMPMUT Dynamics 4: Simulations and analysis
 ================
 jpjh
-compiled November 2023
+compiled Nov 2023, revised Aug 2024
 
 ## Simulate the plasmid compensatory mutations experiment
 
@@ -142,7 +142,7 @@ parameters_mod0 <- c(alpha_Z_f = param_values$alpha,
                      K = param_values$K,
                      mu = param_values$mu)
 
-numTransfers <- 192
+numTransfers <- 768
 transferTime <- 24
 dilFac <- 1
 
@@ -336,6 +336,36 @@ mod34 <- runModel(state = state_mod04,
                   parms = parameters_mod1_adj,
                   title = "plaCM vs. wt")
 
+parameters_mod1_adj[c("gamma_X_1","gamma_X_1t")] <- 0.05*param_values$gamma
+
+mod41 <- runModel(state = state_mod01,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 10:1 free")
+
+mod42 <- runModel(state = state_mod02,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:1 free")
+
+mod43 <- runModel(state = state_mod03,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt 1:10 free")
+
+mod44 <- runModel(state = state_mod04,
+                  func = COMPMOD_model,
+                  times = times,
+                  events = event,
+                  parms = parameters_mod1_adj,
+                  title = "plaCM vs. wt")
+
 mod1 <- rbind(mod11, mod12, mod13, mod14) %>%
   mutate(gamma = "gamma_plaCM = 0.1")
 
@@ -345,7 +375,10 @@ mod2 <- rbind(mod21, mod22, mod23, mod24) %>%
 mod3 <- rbind(mod31, mod32, mod33, mod34) %>%
   mutate(gamma = "gamma_plaCM = 0.001")
 
-mod <- rbind(mod0, mod1, mod2, mod3) %>%
+mod4 <- rbind(mod41, mod42, mod43, mod44) %>%
+  mutate(gamma = "gamma_plaCM = 0.05")
+
+mod <- rbind(mod0, mod1, mod2, mod3, mod4) %>%
   mutate(model = factor(model, levels=c("plaCM vs. wt 10:1 free",
                                         "plaCM vs. wt 1:1 free",
                                         "plaCM vs. wt 1:10 free",
@@ -390,7 +423,8 @@ p_gamma_scan +
   theme_pub()
 ```
 
-    ## Warning: Removed 19712 rows containing non-finite values (`stat_align()`).
+    ## Warning: Removed 105280 rows containing non-finite outside the scale range
+    ## (`stat_align()`).
 
 ``` r
 dev.off()
@@ -399,9 +433,81 @@ dev.off()
     ## quartz_off_screen 
     ##                 2
 
-Consistent with analysis, reducing gamma_plaCM by ~100x is sufficient to
+Consistent with analysis, reducing gamma_plaCM by ~20x is sufficient to
 recapitulate the general experimental results showing fluctuating
 dynamics in the competition between wild-type and plaCM pQBR57.
+
+Generate a suitable figure for the paper, using the 100x reduction.
+
+``` r
+library(patchwork)
+
+p_gamma_fig <- mod %>% 
+    filter(time %in% seq(0,transferTime*numTransfers,transferTime) &
+             !(subpop %in% c("X_2", "X_2t")) &
+             gamma == "gamma_plaCM = 0.01") %>%
+  ggplot(aes(time/10000, fraction, fill = subpop)) +
+  geom_area() +
+  scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "plaCM donor","plaCM transconjugant",
+                             "plasmid-free"),
+                    name="Population") +
+    labs(x="time (/10000)") + 
+  facet_grid(.~model) +
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+p_gamma_fig_crop <- mod %>% 
+    filter(time %in% seq(0,transferTime*numTransfers,transferTime) &
+             time < 385 & 
+             !(subpop %in% c("X_2", "X_2t")) & 
+             gamma == "gamma_plaCM = 0.01") %>%
+  ggplot(aes(time, fraction, fill = subpop)) +
+  geom_area() +
+  scale_fill_manual(values=c("#ccb333","#e6d898","#44AA99","#92d3c8",
+                             "#DDDDDD"),
+                    breaks=c("X_0","X_0t","X_1","X_1t","Z_f"),
+                    labels=c("wild-type plasmid donor","wild-type plasmid transconjugant",
+                             "plaCM donor","plaCM transconjugant",
+                             "plasmid-free"),
+                    name="Population") +
+    labs(x="time") + 
+  facet_grid(.~model) +
+  theme(legend.position="bottom", strip.text.x=element_blank())
+
+(doubleplot1 <- (p_gamma_fig_crop +
+                   theme_pub() + theme(legend.position="right")) /
+  (p_gamma_fig + theme_pub() + 
+     theme(axis.text.x=element_text(angle=45, hjust=1), strip.text.x=element_blank())))
+```
+
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
+tiff("./figs/Fig8_alt.tiff", width=5.2, height=3.6, units="in", res=300)
+doubleplot1
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+Output the parameters used in this model.
+
+``` r
+parameters_mod1_adj
+```
+
+    ##    alpha_Z_f    alpha_X_0    alpha_X_1    alpha_X_2   alpha_X_0t   alpha_X_1t 
+    ## 5.412246e-01 4.427263e-01 5.114360e-01 5.244826e-01 4.427263e-01 5.114360e-01 
+    ##   alpha_X_2t    gamma_X_0    gamma_X_1    gamma_X_2   gamma_X_0t   gamma_X_1t 
+    ## 4.427263e-01 4.573199e-12 2.286600e-13 4.573199e-12 4.573199e-12 2.286600e-13 
+    ##   gamma_X_2t      eta_Z_f      eta_X_0      eta_X_1      eta_X_2     eta_X_0t 
+    ## 4.573199e-12 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 
+    ##     eta_X_1t     eta_X_2t            K           mu 
+    ## 0.000000e+00 0.000000e+00 5.716250e+09 4.125000e-02
 
 ### Investigation of the transfer model.
 
@@ -466,7 +572,7 @@ mod10 %>% filter(time %in% seq(0,transferTime*numTransfers,transferTime)) %>%
   theme(legend.position="bottom")
 ```
 
-![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 The plasmid is lost from the system if the mean measured parameters are
 used in the transfer model. This is likely because the population is
@@ -476,12 +582,12 @@ rate, preventing maintenance of the plasmid through infectious transfer.
 Adjust relevant parameters within realistic bounds to investigate. The
 main values likely to result in maintenance are K, alpha, and gamma.
 
-Increase alpha, gamma and K by 2x SD.
+Increase alpha, gamma and K by 2.5x SD.
 
 ``` r
-max_gamma <- param_values$gamma + 2*(param_sd$gamma)
-max_K <- param_values$K + 2*(param_sd$K)
-max_alpha_modifier <- (param_values$alpha + (2*param_sd$alpha))/param_values$alpha
+max_gamma <- param_values$gamma + 2.5*(param_sd$gamma)
+max_K <- param_values$K + 2.5*(param_sd$K)
+max_alpha_modifier <- (param_values$alpha + (2.5*param_sd$alpha))/param_values$alpha
 
 parameters_mod3_adj <- c(alpha_Z_f = param_values$alpha * max_alpha_modifier,
                          alpha_X_0 = param_values$beta_P * max_alpha_modifier,
@@ -490,10 +596,10 @@ parameters_mod3_adj <- c(alpha_Z_f = param_values$alpha * max_alpha_modifier,
                          alpha_X_0t = param_values$beta_P * max_alpha_modifier,
                          alpha_X_1t = param_values$beta_Q * max_alpha_modifier,
                          alpha_X_2t = param_values$beta_P * max_alpha_modifier,
-                         gamma_X_0 =  max_gamma * 1.5,
+                         gamma_X_0 =  max_gamma,
                          gamma_X_1 =  max_gamma,
                          gamma_X_2 =  max_gamma,
-                         gamma_X_0t = max_gamma * 1.5,
+                         gamma_X_0t = max_gamma,
                          gamma_X_1t = max_gamma,
                          gamma_X_2t = max_gamma,
                          eta_Z_f = 0,
@@ -648,7 +754,7 @@ mod_transfer_adj <- rbind(mod20, mod21, mod22, mod23) %>%
   ggtitle("transfer model with upper limits for K and gamma"))
 ```
 
-![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 png("./figs/p21.png", width=7.2, height=3.6, units="in", res=300)
@@ -670,7 +776,8 @@ p_transfer_gamma_adj_scan +
   theme_pub()
 ```
 
-    ## Warning: Removed 19712 rows containing non-finite values (`stat_align()`).
+    ## Warning: Removed 84224 rows containing non-finite outside the scale range
+    ## (`stat_align()`).
 
 ``` r
 dev.off()
@@ -754,12 +861,16 @@ p_transfer_gamma_adj_fig_crop <- mod_transfer_adj_fig %>%
   facet_grid(.~model) +
   theme(legend.position="bottom", strip.text.x=element_blank())
 
-doubleplot <- (p_transfer_gamma_adj_fig_crop + theme_pub() +
+(doubleplot <- (p_transfer_gamma_adj_fig_crop + theme_pub() +
                  theme(legend.position="right")) /
   (p_transfer_gamma_adj_fig +
      theme_pub() +
-     theme(axis.text.x=element_text(angle=45, hjust=1), strip.text.x=element_blank()))
+     theme(axis.text.x=element_text(angle=45, hjust=1), strip.text.x=element_blank())))
+```
 
+![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
 png("./figs/p41.png", width=5.2, height=3.6, units="in", res=300)
 doubleplot
 dev.off()
@@ -780,6 +891,21 @@ dev.off()
 This plot shows the full dynamics in the bottom panels, revealing the
 damped oscillatory behaviour, and the short-term dynamics equivalent to
 the experimental results in the top panels.
+
+Output the parameters used in this model.
+
+``` r
+parameters_mod3_adj
+```
+
+    ##    alpha_Z_f    alpha_X_0    alpha_X_1    alpha_X_2   alpha_X_0t   alpha_X_1t 
+    ## 6.796056e-01 5.559232e-01 6.422006e-01 6.585830e-01 5.559232e-01 6.422006e-01 
+    ##   alpha_X_2t    gamma_X_0    gamma_X_1    gamma_X_2   gamma_X_0t   gamma_X_1t 
+    ## 5.559232e-01 7.107714e-12 9.453260e-14 7.107714e-12 7.107714e-12 9.453260e-14 
+    ##   gamma_X_2t      eta_Z_f      eta_X_0      eta_X_1      eta_X_2     eta_X_0t 
+    ## 7.107714e-12 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 
+    ##     eta_X_1t     eta_X_2t            K           mu 
+    ## 0.000000e+00 0.000000e+00 9.693735e+09 0.000000e+00
 
 ------------------------------------------------------------------------
 

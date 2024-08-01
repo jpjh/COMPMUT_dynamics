@@ -1,0 +1,232 @@
+---
+title: "COMPMUT Dynamics 5: Transconjugant experiments"
+date: "compiled Aug 2024"
+author: "jpjh"
+output: rmarkdown::github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(gcplyr)
+source("./functions/theme_pub.r")
+
+theme_github <- function(x){
+  theme_pub(base_size=12)
+}
+theme_set(theme_github())
+```
+
+## Experiments investigating the fitness (acquisition) costs and conjugation rates from new pQBR57 and pQBR57∆0059 transconjugants
+
+The dynamics data suggested a trade-off between fitness and conjugation for the pQBR57::plaCM, but this was not observed in bulk conjugation experiments, even when a short conjugation time was used. Therefore, further hypotheses were developed:
+
+1. pQBR57∆0059 suffers from a greater acquisition cost than wild-type pQBR57, such that new transconjugants of pQBR57::plaCM need more time to exit lag phase.
+2. pQBR57∆0059 suffers from reduced conjugation derepression than wild-type pQBR57, such that the conjugation rate from new transconjugants is significantly lower for pQBR57::plaCM;
+
+To investigate these processes, two experiments were conducted.
+
+- Growth curves were set up with fresh transconjugants and grown under constant selection for transconjugants, and compared with established transconjugants. 
+- A conjugation assay (18 hours conjugation time) was run with an excess (100x) of recipient cells, which should provide increased opportunity for conjugation from transconjugants.
+
+### Growth curve assay
+
+```{r}
+full_counts <- read.csv("./data/6_TransconjugantConjugation.csv", header=TRUE) %>%
+  mutate(white_cfu = 10^dilution * (1000/spread) * count_white,
+         blue_cfu = 10^dilution * (1000/spread) * count_blue)
+
+exptdat_acqcost <- read.csv("./data/7_AcqusitionCosts.csv", header=TRUE)
+```
+
+Plot starting counts for the experiment.
+
+```{r}
+pd <- position_dodge(width=0.2)
+full_counts %>% filter(expt == "expt_1") %>%
+  mutate(total_cfu_start = (white_cfu + blue_cfu) * 0.01) %>%
+  ggplot(aes(x=trt, y=total_cfu_start, colour=strain)) +
+  geom_point(position=pd) +
+  scale_x_discrete(breaks=c("T1_trt","T1old_trt"), labels=c("de novo","established")) +
+  scale_y_log10(name = expression(paste("total starting cfu (log"[10],")")))
+```
+
+Is there a significant difference in starting counts between the two plasmids?
+
+```{r}
+t.test(count_blue ~ strain, data=filter(full_counts, expt == "expt_1" & trt == "T1_trt"))
+```
+No significant difference in the means between the groups.
+
+Plot OD600 measurements, correcting by a minimum value.
+
+```{r}
+growthcurve_min <- filter(exptdat_acqcost, Time < 1) %>%
+    select(Measurements) %>% arrange(Measurements) %>% pull() %>% mean()
+
+exptdat_acqcost_gc <- exptdat_acqcost %>% 
+  filter(Strain != "blank" & Trt %in% c("T1_trt","T1old_trt")) %>%
+  mutate(Measure_corr = Measurements - growthcurve_min,
+         Transconjugant = factor(Trt, levels=c("T1_trt","T1old_trt"), labels=c("de novo","established")),
+         Strain = factor(Strain, levels=c("pQBR57","pQBR57_delta59"), labels=c("pQBR57","pQBR57::plaCM")))
+
+exptdat_acqcost_gc %>%
+  ggplot(aes(x=Time, y=Measure_corr, colour=Strain, group=Well)) +
+  geom_line() +
+  facet_grid(Transconjugant ~ Rep) +
+  labs(colour="", y="OD600 (corrected)", x = "Time (h)") +
+  theme(legend.position = "bottom")
+```
+
+Clearly shows that for the T1_trt strains, pQBR57∆0059 has a reduced lag time compared with pQBR57 wild-type.
+
+Calculate growth rates and lag time using gcplyr. Previous studies showed the moving-average and window width of 5 helped smooth noisy data. Small values (< 0.015) were removed to avoid noise around 0.
+
+```{r}
+exptdat_acqcost_gcplyr <- filter(exptdat_acqcost_gc, Trt %in% c("T1_trt","T1old_trt")) %>%
+    group_by(Well, Row, Col, Rep, Strain, Transconjugant) %>%
+    mutate(smoothed = smooth_data(x = Time, y = Measure_corr,
+                                  sm_method = "moving-average", window_width_n = 5),
+           smderivpercap_3 = calc_deriv(x = Time, y = smoothed,
+                                        percapita = TRUE, blank = 0, window_width_n = 3))
+
+set_threshold <- 0.1
+
+(exptdat_acqcost_gcplyrsumm <- exptdat_acqcost_gcplyr %>% 
+    filter(smoothed > 0.015) %>%
+    summarize(max_percap = max_gc(smderivpercap_3, na.rm = TRUE),
+              max_percap_time = extr_val(Time, which_max_gc(smderivpercap_3)),
+              threshold_time = Time[which(smoothed > set_threshold)[1]],
+              doub_time = doubling_time(y = max_percap))) %>%
+  kable()
+
+exptdat_acqcost_gc %>%
+  ggplot(aes(x=Time, y=Measure_corr, colour=Strain, group=Well)) +
+  geom_line() +
+  geom_hline(yintercept=set_threshold, colour="black", linetype="dotted") + 
+  geom_vline(data=exptdat_acqcost_gcplyrsumm,
+             aes(xintercept=max_percap_time, colour=Strain)) +
+  facet_grid(Transconjugant ~ Rep) + scale_y_log10() + 
+  labs(colour="", y="OD600 (corrected)", x = "Time (h)") +
+  theme(legend.position = "bottom")
+
+(acqcost <- ggplot(data=exptdat_acqcost_gcplyrsumm, aes(x=Transconjugant, y=threshold_time,
+                                            colour=Strain)) +
+  geom_point(position=pd, shape=16, alpha=0.5) + labs(colour="", y="time to reach OD600 = 0.1") +
+    stat_summary(fun = mean, geom = "point", size = 2, shape = 1, position=pd) + 
+  theme(legend.position="bottom"))
+
+png("./figs/p_acqcost.png", width=1.8, height=2.2, units="in", res=300)
+acqcost + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.7,0.85))
+dev.off()
+
+exptdat_acqcost_gc %>%
+  ggplot(aes(x=Time, y=Measure_corr, colour=Strain, group=Well)) +
+  geom_line(alpha=0.5) +
+  facet_grid(Transconjugant ~ .) +
+  labs(colour="", y="OD600 (corrected)", x = "Time (h)") +
+  theme(legend.position = c(0.2, 0.8))
+
+t.test(threshold_time ~ Strain, filter(exptdat_acqcost_gcplyrsumm, Transconjugant == "de novo"))
+```
+
+There is a significantly reduced lag time for de novo transconjugants of plaCM compared with pQBR57. 
+
+### Onward conjugation assay
+
+A standard 18 hour conjugation assay was set up with cells in the late exponential phase, attempting to use approximately 100x more recipients than donors. This follows Lundquist and Levin's 1986 experiments, in which an excess of recipients means that secondary conjugation events will become increasingly important during the assay. 
+
+Plot donors and recipients.
+
+```{r}
+(expt2_counts <- full_counts %>% filter(expt=="expt_2") %>%
+  mutate(white = 10^dilution * (1000/spread) * as.numeric(count_white),
+         blue = 10^dilution * (1000/spread) * as.numeric(count_blue),
+         total = white + blue,
+         ratio = white/total)) %>%
+  filter(time=="t0") %>%
+  ggplot(aes(x=strain, y=ratio, shape=rep)) +
+  geom_point() + facet_grid(.~trt) +
+  geom_hline(yintercept=0.5, linetype="dotted", linewidth=0.2)
+```
+
+Note: these counts were made from separate plates, with donors being diluted 100x for the start of the experiment. The similar ratios here mean that the 1:100 dilutions used in the experiment were likely to be accurate.
+
+```{r}
+filter(expt2_counts, time=="t0") %>%
+  ggplot(aes(x=strain, y=white, shape=rep)) +
+  geom_point() + facet_grid(.~trt) + scale_y_log10()
+```
+
+Similar start counts (around 1e9/ml). 
+
+Plot of endpoint counts:
+
+```{r}
+filter(expt2_counts, time=="t1" & trt == "endpoint_DR" & media == "KB+X-gal") %>%
+  ggplot(aes(x=strain, y=ratio, shape=rep)) +
+  geom_point()
+```
+
+Endpoint ratios around 1:99, which is consistent with a 1:100 dilution at the start.
+
+Calculate conjugation rates.
+
+```{r}
+expt2_conj_data <- left_join(
+    expt2_counts %>% filter(time=="t0" & trt == "D_R_premix" & media == "KB+X-gal"),
+    expt2_counts %>% filter(time=="t1" & trt == "endpoint_DR" & media == "KB+X-gal"),
+    by=c("expt","rep","strain"),
+    suffix=c(".start",".end")
+    ) %>%
+  mutate(blue.start_corrected = blue.start*0.01) %>%
+  select(expt, rep, strain, white.start, blue.start_corrected, white.end, blue.end) %>%
+  left_join(
+    filter(expt2_counts, time=="t1" & trt == "endpoint_T" & media == "KB+Km50+Hg20+X-gal"), 
+    by=c("expt","rep","strain")) %>%
+  rename(D.0 = "blue.start_corrected", R.0 = "white.start", D.t = "blue.end", R.t = "white.end",
+         T.t = "white") %>%
+  mutate(psi.R = log(R.t/R.0)/18,
+         psi.D = log(D.t/D.0)/18,
+         psi.T = psi.D, 
+         gamma = (psi.D + psi.R - psi.T) * (T.t / ((D.t * R.t) - (D.0 * R.0 * exp(psi.T * 18)))),
+         w = psi.D/psi.R,
+         log10_gamma = log10(gamma)) %>%
+  select(rep, strain, D.0, R.0, D.t, R.t, T.t, psi.R, psi.D, psi.T, gamma, log10_gamma, w)
+
+(p_outnumbered <- expt2_conj_data  %>%
+    ggplot(aes(x=strain, y=log10_gamma)) +
+    geom_point(alpha=0.5, shape=16, position=pd) + 
+    geom_hline(yintercept=-11.34, linetype="dotted", linewidth=0.2) +
+    stat_summary(fun = mean, geom = "point", size = 2, shape = 1, position=pd) + 
+    scale_y_continuous(limits=c(-15,-10), breaks=seq(-15,-10,by=1), name=expression(paste("log"[10], "(\u03B3)"))) +
+    scale_x_discrete(breaks = c("pQBR57","pQBR57_delta59"),
+                     labels = c("pQBR57","pQBR57::plaCM")))
+
+png("./figs/p_outnumbered.png", width=1.8, height=2.2, units="in", res=300)
+p_outnumbered + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8))
+dev.off()
+```
+
+Results in very similar conjugation rates to before!
+
+```{r}
+t.test(log10_gamma ~ strain, data=expt2_conj_data)
+```
+
+p = 0.775, indicating no significant differences between the strains. 
+
+---
+
+**[Back to index.](../README.md)**

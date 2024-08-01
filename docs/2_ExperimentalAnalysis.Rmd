@@ -1,6 +1,6 @@
 ---
 title: "COMPMUT Dynamics 2: Data analysis"
-date: "compiled Jan 2024"
+date: "compiled Jan 2024, revised Aug 2024"
 author: "jpjh"
 output: rmarkdown::github_document
 editor_options: 
@@ -1089,39 +1089,118 @@ ggplot(data = dat_6, aes(x=tst, y=RF_r, colour=selection)) +
   theme(axis.text.x=element_text(angle=45, hjust=1))
 ```
 
-Produce alternative data frame correcting for test/reference combinations, and produce the figure for the paper.
+Note: the data from the competitions is set up for a tdTomato 'test' strain and a YFP 'reference' strain. However, in some cases it is more intuitive to swap the test and reference around (i.e. to flip the treatments). 
+
+Produce alternative data frame correcting for test/reference combinations (flipped treatments), and produce a figure.
 
 ```{r}
+flipped_treatments <- c("3B","4B","4C")
+
 dat_6_ext <- dat_6 %>% 
-  mutate(reference = ifelse(ttmt %in% c("3B","4B","4C"), tst, ref),
-         test      = ifelse(ttmt %in% c("3B","4B","4C"), ref, tst),
-         relative_fitness = ifelse(ttmt %in% c("3B","4B","4C"), 0-RF_r, RF_r)) %>%
+  mutate(reference = ifelse(ttmt %in% flipped_treatments, tst, ref),
+         test      = ifelse(ttmt %in% flipped_treatments, ref, tst),
+         relative_fitness_r = ifelse(ttmt %in% flipped_treatments, 0-RF_r, RF_r),
+         relative_fitness_w = ifelse(ttmt %in% flipped_treatments, 1/RF_w, RF_w)) %>%
   bind_rows(filter(dat_6, ttmt=="3B") %>% 
-              mutate(reference = ref, test = tst, relative_fitness = RF_r)) %>%
+              mutate(reference = ref, test = tst, relative_fitness_r = RF_r, relative_fitness_w = RF_w, ttmt = "3B_")) %>%
   mutate(reference = factor(reference, levels=c("SBW25(pQBR57)","SBW25::chrCM(pQBR57)",
                               "SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 
-dat_6_summ <- dat_6_ext %>% filter(ttmt %in% c("2A","3A","3B","4B","4C")) %>%
-  group_by(reference, test, selection) %>%
-  summarise(mean = mean(relative_fitness), 
-            n = n(), 
-            se = sd(relative_fitness)/sqrt(n), 
-            ci = (qt(0.95/2 + 0.5, n-1)) * se) %>%
-  rename(relative_fitness=mean)
+dat_6_summ <- dat_6_ext %>% filter(ttmt != "1A") %>%
+  group_by(reference, test, ttmt, selection) %>%
+  summarise(mean = mean(relative_fitness_r), 
+            mean_w = mean(relative_fitness_w)) %>%
+  rename(relative_fitness_r = mean,
+         relative_fitness_w = mean_w)
 
 annot <- data.frame(reference = "SBW25::chrCM(pQBR57)",
                     test = "SBW25(pQBR57::plaCM)",
                     selection = "0",
-                    relative_fitness = 1,
+                    relative_fitness_r = 1,
+                    relative_fitness_w = 1.2,
                     label="*")
 
 pd <- position_dodge(width=0.4)
-(p6 <- ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")), 
-       aes(x=reference, y=relative_fitness, colour=selection)) + 
+(p6 <- ggplot(data = filter(dat_6_ext, ttmt != "1A"), 
+       aes(x=reference, y=relative_fitness_r, colour=selection)) + 
   geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
   geom_point(position = pd, alpha=0.4, shape=16) +
   geom_point(data=dat_6_summ, shape=1, position=pd, size=2) + 
-  labs(y = "relative fitness (r) of test strain") + 
+  labs(y = expression(paste("relative fitness (r) of test strain (days"^"-1",")"))) + 
+  facet_grid(.~test, scales="free_x") +
+  geom_text(data = annot, aes(label=label), colour="black", size=5) +
+  scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8)))
+```
+
+Figure looks good, but this is with uncorrected fitness values. A control was performed to test the effect of the different markers (YFP, dTomato) by competing SBW25::dTomato(pQBR57) vs. SBW25::YFP(pQBR57).
+
+Extract and plot data:
+
+```{r}
+dat_6_ext_ctrls <- filter(dat_6_ext, ttmt == "1A")
+
+dat_6_summ_ctrls <- dat_6_ext_ctrls %>%
+  group_by(ttmt, selection) %>%
+  summarise(mean = mean(relative_fitness_r),
+            mean_w = mean(relative_fitness_w)) %>%
+  rename(relative_fitness_r = mean,
+         relative_fitness_w = mean_w)
+
+ggplot(data = dat_6_ext_ctrls,
+       aes(x="SBW25(pQBR57) control", y=relative_fitness_r)) + 
+  geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
+  geom_point(position = pd, alpha=0.4, shape=16) +
+  geom_point(data=dat_6_summ_ctrls,
+             shape=1, position=pd, size=2) + 
+  labs(y = "relative fitness (r) of tdTomato strain", x = "") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.75,0.2))
+```
+
+Examining the plot shows a slight negative effect of the tdTomato marker.
+
+Test for marker effect:
+
+```{r}
+t.test(dat_6_ext_ctrls$relative_fitness_r)
+
+t.test(dat_6_ext_ctrls$relative_fitness_w, mu = 1)
+```
+
+The marker effect is small and not significant (-0.03/day).
+
+Correct values and re-plot.
+
+```{r}
+r_yfp_correction <- mean(dat_6_ext_ctrls$relative_fitness_r)
+w_yfp_correction <- mean(dat_6_ext_ctrls$relative_fitness_w)
+
+dat_6_ext <- dat_6_ext %>% 
+  mutate(relative_fitness_rc = ifelse(ttmt %in% flipped_treatments, 0-(RF_r-r_yfp_correction), RF_r-r_yfp_correction),
+         relative_fitness_wc = ifelse(ttmt %in% flipped_treatments, 1/(RF_w/w_yfp_correction), (RF_w/w_yfp_correction)))
+
+dat_6_summ_ <- dat_6_ext %>% filter(ttmt != "1A") %>%
+  group_by(reference, test, ttmt, selection) %>%
+  summarise(mean = mean(relative_fitness_rc), 
+            n = n(), 
+            se = sd(relative_fitness_rc)/sqrt(n), 
+            ci = (qt(0.95/2 + 0.5, n-1)) * se,
+            mean_w = mean(relative_fitness_wc),
+            se_w = sd(relative_fitness_wc)/sqrt(n), 
+            ci_w = (qt(0.95/2 + 0.5, n-1)) * se_w) %>%
+  rename(relative_fitness_rc = mean,
+         relative_fitness_wc = mean_w)
+
+annot <- annot %>% mutate(relative_fitness_rc = 1, relative_fitness_wc = 1.2)
+
+(p6_corr <- ggplot(data = filter(dat_6_ext, ttmt != "1A"),
+       aes(x=reference, y=relative_fitness_rc, colour=selection)) + 
+  geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
+  geom_point(position = pd, alpha=0.4, shape=16) +
+  geom_point(data=dat_6_summ_, shape=1, position=pd, size=2) + 
+  labs(y = expression(paste("corrected relative fitness r of test strain (days"^"-1",")"))) + 
   facet_grid(.~test, scales="free_x") +
   geom_text(data = annot, aes(label=label), colour="black", size=5) +
   scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
@@ -1129,28 +1208,53 @@ pd <- position_dodge(width=0.4)
   theme(legend.position=c(0.9,0.8)))
 
 png("./figs/p6.png", width=3.2, height=3.6, units="in", res=300)
-p6 + theme_pub() + theme(legend.position="bottom") +
+p6_corr + theme_pub() + theme(legend.position="bottom") +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   theme(legend.position=c(0.9,0.8))
 dev.off()
 
 tiff("./figs/Fig2.tiff", width=3.2, height=3.6, units="in", res=300)
-p6 + theme_pub() + theme(legend.position="bottom") +
+p6_corr + theme_pub() + theme(legend.position="bottom") +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   theme(legend.position=c(0.9,0.8))
 dev.off()
 ```
 
-#### Analysis
+Plot an extra figure for review showing relative fitness (roughly) mirroring the 2021 paper. 
 
-Analyse the data shown in the figure. Each panel should be analysed separately to make the model balanced, and remove the data presented twice. Linear model with relative fitness as response, and test, reference, selection, and their three-way interaction as independent variables.
+Remove the duplicated data from this figure for clarity.
 
 ```{r}
-lm_6_l <- lm(relative_fitness ~ reference * selection,
+(p6_w <- ggplot(data = filter(dat_6_ext, !(ttmt %in% c("1A","3B_"))), 
+       aes(x=test, y=1/relative_fitness_wc, colour=selection)) + 
+  geom_hline(yintercept=1, linetype="dotted", linewidth=0.5) +
+  geom_point(position = pd, alpha=0.4, shape=16) +
+  geom_point(data=filter(dat_6_summ_, ttmt != "3B_"), 
+             shape=1, position=pd, size=2) + 
+  labs(y = "relative fitness (W) of reference strain") + 
+  facet_grid(.~reference, scales="free_x") +
+  scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.85,0.4)) +
+  scale_y_continuous(breaks=seq(0.6,1.2, by=0.1)))
+
+png("./figs/p6_w.png", width=4.2, height=3.6, units="in", res=300)
+p6_w + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=55, hjust=1)) +
+  theme(legend.position=c(0.85,0.4))
+dev.off()
+```
+
+#### Analysis
+
+Analyse the data shown in the main figure. Each panel should be analysed separately to make the model balanced, and remove the data presented twice. Linear model with corrected relative fitness as response, and test, reference, selection, and their three-way interaction as independent variables.
+
+```{r}
+lm_6_l <- lm(relative_fitness_rc ~ reference * selection,
              data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 
-lm_6_r <- lm(relative_fitness ~ reference * selection,
+lm_6_r <- lm(relative_fitness_rc ~ reference * selection,
              data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
 
@@ -1164,23 +1268,23 @@ Acceptable fit, seems to meet all assumptions of linear model.
 ```{r}
 dat_6_ext <- within(dat_6_ext, {
   groups <- interaction(tst,ref,selection)
-  groups <- reorder(groups, relative_fitness, mean)
+  groups <- reorder(groups, relative_fitness_rc, mean)
 })
 
 library(car)
-bartlett.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+bartlett.test(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
-fligner.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+fligner.test(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
-leveneTest(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+leveneTest(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 shapiro.test(resid(lm_6_l))
 
-bartlett.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+bartlett.test(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
-fligner.test(relative_fitness ~ groups,  data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+fligner.test(relative_fitness_rc ~ groups,  data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
-leveneTest(relative_fitness ~ groups,    data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+leveneTest(relative_fitness_rc ~ groups,    data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
 shapiro.test(resid(lm_6_r))
 ```
@@ -1213,18 +1317,20 @@ Compare all measurements against 0.
 ```{r}
 (posthoc_l_0 <- filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")) %>%
-  select(reference, test, selection, relative_fitness) %>%
+  select(reference, test, selection, relative_fitness_rc) %>%
   group_by(reference, test, selection) %>% 
-  summarise(values = list(relative_fitness),
+  summarise(values = list(relative_fitness_rc),
             coef = t.test(unlist(values), mu = 0)$estimate,
             df = t.test(unlist(values), mu = 0)$parameter,
             t_value = t.test(unlist(values), mu = 0)$statistic,
             p_value = t.test(unlist(values), mu = 0)$p.value) %>%
   select(-values) %>%
-  mutate(p_adj = p.adjust(p_value, method="bonferroni"))) %>% kable()
+  mutate(p_adj = p.adjust(p_value, method="bonferroni"),
+         sign = ifelse(p_adj<0.05, "*", ""))) %>% 
+  kable()
 ```
 
-After Bonferroni adjustment, chrCM is significantly fitter than all comparisons except for the double-compensated strain. 
+After Bonferroni adjustment, chrCM is significantly fitter than all comparisons except for the double-compensated strain, especially in the presence of mercury.
 
 For the right-hand panel:
 
@@ -1239,8 +1345,8 @@ posthoc_r_s <- lsmeans(lm_6_r, pairwise ~ (selection|reference), adjust="none")
 posthoc_r_r <- lsmeans(lm_6_r, pairwise ~ (reference|selection), adjust="none")
 contr_r <- data.frame(posthoc_r_s$contrasts) %>% 
   bind_rows(data.frame(posthoc_r_r$contrasts)) %>%
-  mutate(p.adjust = p.adjust(p.value, method="bonferroni"),
-         sign = ifelse(p.value<0.05, "*", ""))
+  mutate(p_adj = p.adjust(p.value, method="bonferroni"),
+         sign = ifelse(p_adj < 0.05, "*", ""))
 kable(contr_r)
 ```
 
@@ -1249,15 +1355,16 @@ Significant effects of mercury for all comparisons. Significant differences betw
 ```{r}
 (posthoc_r_0 <- filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")) %>%
-  select(reference, test, selection, relative_fitness) %>%
+  select(reference, test, selection, relative_fitness_rc) %>%
   group_by(reference, test, selection) %>% 
-  summarise(values = list(relative_fitness),
+  summarise(values = list(relative_fitness_rc),
             coef = t.test(unlist(values), mu = 0)$estimate,
             df = t.test(unlist(values), mu = 0)$parameter,
             t_value = t.test(unlist(values), mu = 0)$statistic,
             p_value = t.test(unlist(values), mu = 0)$p.value) %>%
   select(-values) %>%
-  mutate(p_adj = p.adjust(p_value, method="bonferroni"))) %>% kable()
+    mutate(p_adj = p.adjust(p_value, method="bonferroni"),
+         sign = ifelse(p_adj<0.05, "*", ""))) %>% kable()
 ```
 
 After Bonferroni adjustment, plaCM is significantly fitter than uncompensated, but significantly less fit than the double-compensated.

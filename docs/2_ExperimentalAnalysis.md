@@ -1,7 +1,7 @@
 COMPMUT Dynamics 2: Data analysis
 ================
 jpjh
-compiled Jan 2024
+compiled Jan 2024, revised Aug 2024
 
 ## Analysis of plaCM/chrCM experiment dynamics
 
@@ -311,7 +311,14 @@ overdispersion.
 
 ``` r
 library(glmmTMB)
+```
 
+    ## Warning in checkDepPackageVersion(dep_pkg = "TMB"): Package version inconsistency detected.
+    ## glmmTMB was built with TMB version 1.9.10
+    ## Current TMB version is 1.9.7
+    ## Please re-install glmmTMB from source or restore original 'TMB' package (see '?reinstalling' for more information)
+
+``` r
 glmm_dat_1 <-glmmTMB(cbind(count_plaCM, count_chrCM) ~ transf * Selection * Markers + (1 + transf|pop),
                      data=dat_1, family="betabinomial")
 
@@ -801,12 +808,12 @@ summary(glmm_dat_2)
     ## 
     ## Conditional model:
     ##                                          Estimate Std. Error z value Pr(>|z|)
-    ## (Intercept)                             -0.379974   0.052323  -7.262 3.81e-13
+    ## (Intercept)                             -0.379975   0.052323  -7.262 3.81e-13
     ## transf                                  -0.302990   0.023321 -12.992  < 2e-16
-    ## SelectionYes                            -0.864977   0.059113 -14.633  < 2e-16
-    ## MarkersYellow / Red                     -0.067151   0.073088  -0.919    0.358
-    ## transf:SelectionYes                     -0.527209   0.034975 -15.074  < 2e-16
-    ## transf:MarkersYellow / Red               0.142161   0.032253   4.408 1.04e-05
+    ## SelectionYes                            -0.864976   0.059113 -14.633  < 2e-16
+    ## MarkersYellow / Red                     -0.067152   0.073088  -0.919    0.358
+    ## transf:SelectionYes                     -0.527207   0.034975 -15.074  < 2e-16
+    ## transf:MarkersYellow / Red               0.142160   0.032253   4.408 1.04e-05
     ## SelectionYes:MarkersYellow / Red        -0.065664   0.080223  -0.819    0.413
     ## transf:SelectionYes:MarkersYellow / Red  0.007194   0.047554   0.151    0.880
     ##                                            
@@ -1170,7 +1177,7 @@ summary(lmm_dat_3.1)
     ## Fixed effects:  logitrat ~ transf + Ratio 
     ##                  Value  Std.Error  DF    t-value p-value
     ## (Intercept) -0.4314986 0.01938222 191 -22.262599  0.0000
-    ## transf      -0.3464856 0.01172748 191 -29.544773  0.0000
+    ## transf      -0.3464856 0.01172748 191 -29.544774  0.0000
     ## Ratio1:1    -0.0607690 0.02309420  20  -2.631351  0.0160
     ## Ratio1:10   -0.0732385 0.02309420  20  -3.171293  0.0048
     ## Rationone   -0.0545826 0.02309420  20  -2.363477  0.0283
@@ -1182,8 +1189,8 @@ summary(lmm_dat_3.1)
     ## Rationone -0.596  0.000  0.500  0.500
     ## 
     ## Standardized Within-Group Residuals:
-    ##         Min          Q1         Med          Q3         Max 
-    ## -2.27738107 -0.60477741  0.00932152  0.57542948  3.39133592 
+    ##          Min           Q1          Med           Q3          Max 
+    ## -2.277381080 -0.604777408  0.009321518  0.575429481  3.391335922 
     ## 
     ## Number of Observations: 216
     ## Number of Groups: 24
@@ -1522,7 +1529,7 @@ VarCorr(lmm_dat_4) #extremely low variance on random effects
 
     ## pop = pdLogChol(1) 
     ##             Variance     StdDev      
-    ## (Intercept) 3.045336e-10 1.745089e-05
+    ## (Intercept) 2.962300e-10 1.721133e-05
     ## Residual    1.066754e-01 3.266120e-01
 
 ``` r
@@ -1621,7 +1628,7 @@ summary(lmm_dat_4_poly3)
     ## 
     ## Fixed effects:  logitrat ~ poly(transf, 3, raw = TRUE) * Ratio 
     ##                                             Value  Std.Error  DF   t-value
-    ## (Intercept)                            -2.2562534 0.05585846 180 -40.39234
+    ## (Intercept)                            -2.2562534 0.05585845 180 -40.39234
     ## poly(transf, 3, raw = TRUE)1           -1.9649640 0.08609773 180 -22.82248
     ## poly(transf, 3, raw = TRUE)2            0.3297400 0.03754771 180   8.78190
     ## poly(transf, 3, raw = TRUE)3            0.4097069 0.04516707 180   9.07092
@@ -1933,7 +1940,7 @@ summary(glmm_dat_4_poly3)
     ## poly(transf, 3, raw = TRUE)2:Ratio1:1  -0.40500    0.04470   -9.06  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)3:Ratio1:1  -0.48161    0.05162   -9.33  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)1:Ratio1:10  1.30737    0.09792   13.35  < 2e-16 ***
-    ## poly(transf, 3, raw = TRUE)2:Ratio1:10 -0.27789    0.04282   -6.49 8.64e-11 ***
+    ## poly(transf, 3, raw = TRUE)2:Ratio1:10 -0.27789    0.04282   -6.49 8.63e-11 ***
     ## poly(transf, 3, raw = TRUE)3:Ratio1:10 -0.40051    0.05015   -7.99 1.38e-15 ***
     ## poly(transf, 3, raw = TRUE)1:Rationone  1.39730    0.09730   14.36  < 2e-16 ***
     ## poly(transf, 3, raw = TRUE)2:Rationone -0.27337    0.04230   -6.46 1.03e-10 ***
@@ -2178,7 +2185,7 @@ VarCorr(lmm_dat_5)
 
     ## pop = pdLogChol(1) 
     ##             Variance     StdDev      
-    ## (Intercept) 2.091272e-09 4.573043e-05
+    ## (Intercept) 2.091290e-09 4.573062e-05
     ## Residual    3.291991e-01 5.737587e-01
 
 ``` r
@@ -2187,7 +2194,7 @@ VarCorr(lmm_dat_5_poly2)
 
     ## pop = pdLogChol(1) 
     ##             Variance    StdDev    
-    ## (Intercept) 0.002111345 0.04594937
+    ## (Intercept) 0.002111344 0.04594937
     ## Residual    0.274909132 0.52431778
 
 ``` r
@@ -2625,24 +2632,24 @@ summary(glmm_dat_5_poly4)
     ##                                        Estimate Std. Error z value Pr(>|z|)    
     ## (Intercept)                            -0.92370    0.10022  -9.217  < 2e-16 ***
     ## poly(transf, 4, raw = TRUE)1           -2.33357    0.16805 -13.886  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2           -0.32324    0.25928  -1.247 0.212505    
-    ## poly(transf, 4, raw = TRUE)3            0.57899    0.08718   6.641 3.12e-11 ***
-    ## poly(transf, 4, raw = TRUE)4            0.04818    0.10575   0.456 0.648673    
-    ## Ratio1:1                                1.62492    0.13626  11.925  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2           -0.32321    0.25928  -1.247 0.212560    
+    ## poly(transf, 4, raw = TRUE)3            0.57899    0.08719   6.641 3.12e-11 ***
+    ## poly(transf, 4, raw = TRUE)4            0.04816    0.10575   0.455 0.648803    
+    ## Ratio1:1                                1.62491    0.13626  11.925  < 2e-16 ***
     ## Ratio1:10                               2.55242    0.15007  17.008  < 2e-16 ***
-    ## Rationone                               2.56306    0.15040  17.042  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)1:Ratio1:1   0.99065    0.20655   4.796 1.62e-06 ***
-    ## poly(transf, 4, raw = TRUE)2:Ratio1:1  -1.11728    0.33130  -3.372 0.000745 ***
-    ## poly(transf, 4, raw = TRUE)3:Ratio1:1  -0.14088    0.10697  -1.317 0.187843    
-    ## poly(transf, 4, raw = TRUE)4:Ratio1:1   0.36702    0.13318   2.756 0.005853 ** 
-    ## poly(transf, 4, raw = TRUE)1:Ratio1:10  3.28347    0.22611  14.521  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2:Ratio1:10  0.20081    0.35728   0.562 0.574075    
-    ## poly(transf, 4, raw = TRUE)3:Ratio1:10 -0.69994    0.11685  -5.990 2.10e-09 ***
-    ## poly(transf, 4, raw = TRUE)4:Ratio1:10 -0.08994    0.14331  -0.628 0.530269    
-    ## poly(transf, 4, raw = TRUE)1:Rationone  3.35747    0.23217  14.461  < 2e-16 ***
-    ## poly(transf, 4, raw = TRUE)2:Rationone  0.15857    0.36336   0.436 0.662552    
+    ## Rationone                               2.56305    0.15040  17.042  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)1:Ratio1:1   0.99063    0.20655   4.796 1.62e-06 ***
+    ## poly(transf, 4, raw = TRUE)2:Ratio1:1  -1.11731    0.33130  -3.373 0.000745 ***
+    ## poly(transf, 4, raw = TRUE)3:Ratio1:1  -0.14086    0.10697  -1.317 0.187883    
+    ## poly(transf, 4, raw = TRUE)4:Ratio1:1   0.36703    0.13318   2.756 0.005851 ** 
+    ## poly(transf, 4, raw = TRUE)1:Ratio1:10  3.28344    0.22611  14.521  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2:Ratio1:10  0.20078    0.35728   0.562 0.574138    
+    ## poly(transf, 4, raw = TRUE)3:Ratio1:10 -0.69993    0.11685  -5.990 2.10e-09 ***
+    ## poly(transf, 4, raw = TRUE)4:Ratio1:10 -0.08992    0.14332  -0.627 0.530373    
+    ## poly(transf, 4, raw = TRUE)1:Rationone  3.35745    0.23217  14.461  < 2e-16 ***
+    ## poly(transf, 4, raw = TRUE)2:Rationone  0.15853    0.36336   0.436 0.662634    
     ## poly(transf, 4, raw = TRUE)3:Rationone -0.59782    0.12363  -4.835 1.33e-06 ***
-    ## poly(transf, 4, raw = TRUE)4:Rationone  0.01111    0.14767   0.075 0.940026    
+    ## poly(transf, 4, raw = TRUE)4:Rationone  0.01113    0.14766   0.075 0.939937    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -2674,45 +2681,53 @@ ggplot(data = dat_6, aes(x=tst, y=RF_r, colour=selection)) +
 
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-70-1.png)<!-- -->
 
+Note: the data from the competitions is set up for a tdTomato ‘test’
+strain and a YFP ‘reference’ strain. However, in some cases it is more
+intuitive to swap the test and reference around (i.e. to flip the
+treatments).
+
 Produce alternative data frame correcting for test/reference
-combinations, and produce the figure for the paper.
+combinations (flipped treatments), and produce a figure.
 
 ``` r
+flipped_treatments <- c("3B","4B","4C")
+
 dat_6_ext <- dat_6 %>% 
-  mutate(reference = ifelse(ttmt %in% c("3B","4B","4C"), tst, ref),
-         test      = ifelse(ttmt %in% c("3B","4B","4C"), ref, tst),
-         relative_fitness = ifelse(ttmt %in% c("3B","4B","4C"), 0-RF_r, RF_r)) %>%
+  mutate(reference = ifelse(ttmt %in% flipped_treatments, tst, ref),
+         test      = ifelse(ttmt %in% flipped_treatments, ref, tst),
+         relative_fitness_r = ifelse(ttmt %in% flipped_treatments, 0-RF_r, RF_r),
+         relative_fitness_w = ifelse(ttmt %in% flipped_treatments, 1/RF_w, RF_w)) %>%
   bind_rows(filter(dat_6, ttmt=="3B") %>% 
-              mutate(reference = ref, test = tst, relative_fitness = RF_r)) %>%
+              mutate(reference = ref, test = tst, relative_fitness_r = RF_r, relative_fitness_w = RF_w, ttmt = "3B_")) %>%
   mutate(reference = factor(reference, levels=c("SBW25(pQBR57)","SBW25::chrCM(pQBR57)",
                               "SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 
-dat_6_summ <- dat_6_ext %>% filter(ttmt %in% c("2A","3A","3B","4B","4C")) %>%
-  group_by(reference, test, selection) %>%
-  summarise(mean = mean(relative_fitness), 
-            n = n(), 
-            se = sd(relative_fitness)/sqrt(n), 
-            ci = (qt(0.95/2 + 0.5, n-1)) * se) %>%
-  rename(relative_fitness=mean)
+dat_6_summ <- dat_6_ext %>% filter(ttmt != "1A") %>%
+  group_by(reference, test, ttmt, selection) %>%
+  summarise(mean = mean(relative_fitness_r), 
+            mean_w = mean(relative_fitness_w)) %>%
+  rename(relative_fitness_r = mean,
+         relative_fitness_w = mean_w)
 ```
 
-    ## `summarise()` has grouped output by 'reference', 'test'. You can override using
-    ## the `.groups` argument.
+    ## `summarise()` has grouped output by 'reference', 'test', 'ttmt'. You can
+    ## override using the `.groups` argument.
 
 ``` r
 annot <- data.frame(reference = "SBW25::chrCM(pQBR57)",
                     test = "SBW25(pQBR57::plaCM)",
                     selection = "0",
-                    relative_fitness = 1,
+                    relative_fitness_r = 1,
+                    relative_fitness_w = 1.2,
                     label="*")
 
 pd <- position_dodge(width=0.4)
-(p6 <- ggplot(data = filter(dat_6_ext, ttmt %in% c("2A","3A","3B","4B","4C")), 
-       aes(x=reference, y=relative_fitness, colour=selection)) + 
+(p6 <- ggplot(data = filter(dat_6_ext, ttmt != "1A"), 
+       aes(x=reference, y=relative_fitness_r, colour=selection)) + 
   geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
   geom_point(position = pd, alpha=0.4, shape=16) +
   geom_point(data=dat_6_summ, shape=1, position=pd, size=2) + 
-  labs(y = "relative fitness (r) of test strain") + 
+  labs(y = expression(paste("relative fitness (r) of test strain (days"^"-1",")"))) + 
   facet_grid(.~test, scales="free_x") +
   geom_text(data = annot, aes(label=label), colour="black", size=5) +
   scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
@@ -2720,11 +2735,135 @@ pd <- position_dodge(width=0.4)
   theme(legend.position=c(0.9,0.8)))
 ```
 
+    ## Warning: A numeric `legend.position` argument in `theme()` was deprecated in ggplot2
+    ## 3.5.0.
+    ## ℹ Please use the `legend.position.inside` argument of `theme()` instead.
+    ## This warning is displayed once every 8 hours.
+    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    ## generated.
+
 ![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->
+
+Figure looks good, but this is with uncorrected fitness values. A
+control was performed to test the effect of the different markers (YFP,
+dTomato) by competing SBW25::dTomato(pQBR57) vs. SBW25::YFP(pQBR57).
+
+Extract and plot data:
+
+``` r
+dat_6_ext_ctrls <- filter(dat_6_ext, ttmt == "1A")
+
+dat_6_summ_ctrls <- dat_6_ext_ctrls %>%
+  group_by(ttmt, selection) %>%
+  summarise(mean = mean(relative_fitness_r),
+            mean_w = mean(relative_fitness_w)) %>%
+  rename(relative_fitness_r = mean,
+         relative_fitness_w = mean_w)
+```
+
+    ## `summarise()` has grouped output by 'ttmt'. You can override using the
+    ## `.groups` argument.
+
+``` r
+ggplot(data = dat_6_ext_ctrls,
+       aes(x="SBW25(pQBR57) control", y=relative_fitness_r)) + 
+  geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
+  geom_point(position = pd, alpha=0.4, shape=16) +
+  geom_point(data=dat_6_summ_ctrls,
+             shape=1, position=pd, size=2) + 
+  labs(y = "relative fitness (r) of tdTomato strain", x = "") +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.75,0.2))
+```
+
+![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-72-1.png)<!-- -->
+
+Examining the plot shows a slight negative effect of the tdTomato
+marker.
+
+Test for marker effect:
+
+``` r
+t.test(dat_6_ext_ctrls$relative_fitness_r)
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  dat_6_ext_ctrls$relative_fitness_r
+    ## t = -0.76562, df = 9, p-value = 0.4635
+    ## alternative hypothesis: true mean is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.12694956  0.06274741
+    ## sample estimates:
+    ##   mean of x 
+    ## -0.03210107
+
+``` r
+t.test(dat_6_ext_ctrls$relative_fitness_w, mu = 1)
+```
+
+    ## 
+    ##  One Sample t-test
+    ## 
+    ## data:  dat_6_ext_ctrls$relative_fitness_w
+    ## t = -0.74555, df = 9, p-value = 0.475
+    ## alternative hypothesis: true mean is not equal to 1
+    ## 95 percent confidence interval:
+    ##  0.9733697 1.0134280
+    ## sample estimates:
+    ## mean of x 
+    ## 0.9933989
+
+The marker effect is small and not significant (-0.03/day).
+
+Correct values and re-plot.
+
+``` r
+r_yfp_correction <- mean(dat_6_ext_ctrls$relative_fitness_r)
+w_yfp_correction <- mean(dat_6_ext_ctrls$relative_fitness_w)
+
+dat_6_ext <- dat_6_ext %>% 
+  mutate(relative_fitness_rc = ifelse(ttmt %in% flipped_treatments, 0-(RF_r-r_yfp_correction), RF_r-r_yfp_correction),
+         relative_fitness_wc = ifelse(ttmt %in% flipped_treatments, 1/(RF_w/w_yfp_correction), (RF_w/w_yfp_correction)))
+
+dat_6_summ_ <- dat_6_ext %>% filter(ttmt != "1A") %>%
+  group_by(reference, test, ttmt, selection) %>%
+  summarise(mean = mean(relative_fitness_rc), 
+            n = n(), 
+            se = sd(relative_fitness_rc)/sqrt(n), 
+            ci = (qt(0.95/2 + 0.5, n-1)) * se,
+            mean_w = mean(relative_fitness_wc),
+            se_w = sd(relative_fitness_wc)/sqrt(n), 
+            ci_w = (qt(0.95/2 + 0.5, n-1)) * se_w) %>%
+  rename(relative_fitness_rc = mean,
+         relative_fitness_wc = mean_w)
+```
+
+    ## `summarise()` has grouped output by 'reference', 'test', 'ttmt'. You can
+    ## override using the `.groups` argument.
+
+``` r
+annot <- annot %>% mutate(relative_fitness_rc = 1, relative_fitness_wc = 1.2)
+
+(p6_corr <- ggplot(data = filter(dat_6_ext, ttmt != "1A"),
+       aes(x=reference, y=relative_fitness_rc, colour=selection)) + 
+  geom_hline(yintercept=0, linetype="dotted", linewidth=0.5) +
+  geom_point(position = pd, alpha=0.4, shape=16) +
+  geom_point(data=dat_6_summ_, shape=1, position=pd, size=2) + 
+  labs(y = expression(paste("corrected relative fitness r of test strain (days"^"-1",")"))) + 
+  facet_grid(.~test, scales="free_x") +
+  geom_text(data = annot, aes(label=label), colour="black", size=5) +
+  scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.9,0.8)))
+```
+
+![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-74-1.png)<!-- -->
 
 ``` r
 png("./figs/p6.png", width=3.2, height=3.6, units="in", res=300)
-p6 + theme_pub() + theme(legend.position="bottom") +
+p6_corr + theme_pub() + theme(legend.position="bottom") +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   theme(legend.position=c(0.9,0.8))
 dev.off()
@@ -2735,7 +2874,7 @@ dev.off()
 
 ``` r
 tiff("./figs/Fig2.tiff", width=3.2, height=3.6, units="in", res=300)
-p6 + theme_pub() + theme(legend.position="bottom") +
+p6_corr + theme_pub() + theme(legend.position="bottom") +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   theme(legend.position=c(0.9,0.8))
 dev.off()
@@ -2744,20 +2883,53 @@ dev.off()
     ## quartz_off_screen 
     ##                 2
 
-#### Analysis
+Plot an extra figure for review showing relative fitness (roughly)
+mirroring the 2021 paper.
 
-Analyse the data shown in the figure. Each panel should be analysed
-separately to make the model balanced, and remove the data presented
-twice. Linear model with relative fitness as response, and test,
-reference, selection, and their three-way interaction as independent
-variables.
+Remove the duplicated data from this figure for clarity.
 
 ``` r
-lm_6_l <- lm(relative_fitness ~ reference * selection,
+(p6_w <- ggplot(data = filter(dat_6_ext, !(ttmt %in% c("1A","3B_"))), 
+       aes(x=test, y=1/relative_fitness_wc, colour=selection)) + 
+  geom_hline(yintercept=1, linetype="dotted", linewidth=0.5) +
+  geom_point(position = pd, alpha=0.4, shape=16) +
+  geom_point(data=filter(dat_6_summ_, ttmt != "3B_"), 
+             shape=1, position=pd, size=2) + 
+  labs(y = "relative fitness (W) of reference strain") + 
+  facet_grid(.~reference, scales="free_x") +
+  scale_colour_discrete(name="", labels=c("no selection", "40 µM Hg")) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  theme(legend.position=c(0.85,0.4)) +
+  scale_y_continuous(breaks=seq(0.6,1.2, by=0.1)))
+```
+
+![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-75-1.png)<!-- -->
+
+``` r
+png("./figs/p6_w.png", width=4.2, height=3.6, units="in", res=300)
+p6_w + theme_pub() + theme(legend.position="bottom") +
+  theme(axis.text.x=element_text(angle=55, hjust=1)) +
+  theme(legend.position=c(0.85,0.4))
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+#### Analysis
+
+Analyse the data shown in the main figure. Each panel should be analysed
+separately to make the model balanced, and remove the data presented
+twice. Linear model with corrected relative fitness as response, and
+test, reference, selection, and their three-way interaction as
+independent variables.
+
+``` r
+lm_6_l <- lm(relative_fitness_rc ~ reference * selection,
              data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 
-lm_6_r <- lm(relative_fitness ~ reference * selection,
+lm_6_r <- lm(relative_fitness_rc ~ reference * selection,
              data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
 
@@ -2765,46 +2937,46 @@ par(mfrow=c(2,2))
 plot(lm_6_l)
 ```
 
-![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-72-1.png)<!-- -->
+![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-76-1.png)<!-- -->
 
 ``` r
 plot(lm_6_r)
 ```
 
-![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-72-2.png)<!-- -->
+![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-76-2.png)<!-- -->
 
 Acceptable fit, seems to meet all assumptions of linear model.
 
 ``` r
 dat_6_ext <- within(dat_6_ext, {
   groups <- interaction(tst,ref,selection)
-  groups <- reorder(groups, relative_fitness, mean)
+  groups <- reorder(groups, relative_fitness_rc, mean)
 })
 
 library(car)
-bartlett.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+bartlett.test(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 ```
 
     ## 
     ##  Bartlett test of homogeneity of variances
     ## 
-    ## data:  relative_fitness by groups
+    ## data:  relative_fitness_rc by groups
     ## Bartlett's K-squared = 1.3271, df = 5, p-value = 0.9321
 
 ``` r
-fligner.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+fligner.test(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 ```
 
     ## 
     ##  Fligner-Killeen test of homogeneity of variances
     ## 
-    ## data:  relative_fitness by groups
+    ## data:  relative_fitness_rc by groups
     ## Fligner-Killeen:med chi-squared = 0.78489, df = 5, p-value = 0.978
 
 ``` r
-leveneTest(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
+leveneTest(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")))
 ```
 
@@ -2824,29 +2996,29 @@ shapiro.test(resid(lm_6_l))
     ## W = 0.985, p-value = 0.6702
 
 ``` r
-bartlett.test(relative_fitness ~ groups, data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+bartlett.test(relative_fitness_rc ~ groups, data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
 ```
 
     ## 
     ##  Bartlett test of homogeneity of variances
     ## 
-    ## data:  relative_fitness by groups
+    ## data:  relative_fitness_rc by groups
     ## Bartlett's K-squared = 1.4941, df = 3, p-value = 0.6836
 
 ``` r
-fligner.test(relative_fitness ~ groups,  data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+fligner.test(relative_fitness_rc ~ groups,  data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
 ```
 
     ## 
     ##  Fligner-Killeen test of homogeneity of variances
     ## 
-    ## data:  relative_fitness by groups
+    ## data:  relative_fitness_rc by groups
     ## Fligner-Killeen:med chi-squared = 1.6084, df = 3, p-value = 0.6575
 
 ``` r
-leveneTest(relative_fitness ~ groups,    data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
+leveneTest(relative_fitness_rc ~ groups,    data=filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")))
 ```
 
@@ -2873,9 +3045,9 @@ anova(lm_6_l)
 
     ## Analysis of Variance Table
     ## 
-    ## Response: relative_fitness
+    ## Response: relative_fitness_rc
     ##                     Df  Sum Sq Mean Sq F value    Pr(>F)    
-    ## reference            2 26.5120 13.2560 649.003 < 2.2e-16 ***
+    ## reference            2 28.2278 14.1139 691.006 < 2.2e-16 ***
     ## selection            1  2.7975  2.7975 136.964 < 2.2e-16 ***
     ## reference:selection  2  2.6706  1.3353  65.376 3.773e-15 ***
     ## Residuals           54  1.1030  0.0204                      
@@ -2903,11 +3075,11 @@ kable(contr_l)
 | selection0 - selection40                           | SBW25(pQBR57::plaCM)        | -0.2925314 | 0.0639143 |  54 |  -4.5769349 | 0.0000281 | NA        | 0.0002527 | \*   |
 | selection0 - selection40                           | SBW25::chrCM(pQBR57::plaCM) |  0.0009808 | 0.0639143 |  54 |   0.0153453 | 0.9878132 | NA        | 1.0000000 |      |
 | SBW25(pQBR57) - SBW25(pQBR57::plaCM)               | NA                          |  0.8259458 | 0.0639143 |  54 |  12.9227152 | 0.0000000 | 0         | 0.0000000 | \*   |
-| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM)        | NA                          |  1.0584511 | 0.0639143 |  54 |  16.5604847 | 0.0000000 | 0         | 0.0000000 | \*   |
-| SBW25(pQBR57::plaCM) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  0.2325054 | 0.0639143 |  54 |   3.6377695 | 0.0006154 | 0         | 0.0055382 | \*   |
+| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM)        | NA                          |  1.1226533 | 0.0639143 |  54 |  17.5649889 | 0.0000000 | 0         | 0.0000000 | \*   |
+| SBW25(pQBR57::plaCM) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  0.2967075 | 0.0639143 |  54 |   4.6422738 | 0.0000224 | 0         | 0.0002018 | \*   |
 | SBW25(pQBR57) - SBW25(pQBR57::plaCM)               | NA                          |  1.5374336 | 0.0639143 |  54 |  24.0546259 | 0.0000000 | 40        | 0.0000000 | \*   |
-| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM)        | NA                          |  2.0634512 | 0.0639143 |  54 |  32.2846756 | 0.0000000 | 40        | 0.0000000 | \*   |
-| SBW25(pQBR57::plaCM) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  0.5260176 | 0.0639143 |  54 |   8.2300498 | 0.0000000 | 40        | 0.0000000 | \*   |
+| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM)        | NA                          |  2.1276533 | 0.0639143 |  54 |  33.2891799 | 0.0000000 | 40        | 0.0000000 | \*   |
+| SBW25(pQBR57::plaCM) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  0.5902197 | 0.0639143 |  54 |   9.2345540 | 0.0000000 | 40        | 0.0000000 | \*   |
 
 Significant effects of mercury for all comparisons except chrCM vs
 double-compensated. Significant differences between all modes of
@@ -2918,31 +3090,34 @@ Compare all measurements against 0.
 ``` r
 (posthoc_l_0 <- filter(dat_6_ext, test == "SBW25::chrCM(pQBR57)" & 
                            reference %in% c("SBW25(pQBR57)","SBW25(pQBR57::plaCM)","SBW25::chrCM(pQBR57::plaCM)")) %>%
-  select(reference, test, selection, relative_fitness) %>%
+  select(reference, test, selection, relative_fitness_rc) %>%
   group_by(reference, test, selection) %>% 
-  summarise(values = list(relative_fitness),
+  summarise(values = list(relative_fitness_rc),
             coef = t.test(unlist(values), mu = 0)$estimate,
             df = t.test(unlist(values), mu = 0)$parameter,
             t_value = t.test(unlist(values), mu = 0)$statistic,
             p_value = t.test(unlist(values), mu = 0)$p.value) %>%
   select(-values) %>%
-  mutate(p_adj = p.adjust(p_value, method="bonferroni"))) %>% kable()
+  mutate(p_adj = p.adjust(p_value, method="bonferroni"),
+         sign = ifelse(p_adj<0.05, "*", ""))) %>% 
+  kable()
 ```
 
     ## `summarise()` has grouped output by 'reference', 'test'. You can override using
     ## the `.groups` argument.
 
-| reference                   | test                 | selection |       coef |  df |   t_value |   p_value |     p_adj |
-|:----------------------------|:---------------------|:----------|-----------:|----:|----------:|----------:|----------:|
-| SBW25(pQBR57)               | SBW25::chrCM(pQBR57) | 0         |  0.9593259 |   9 | 23.495140 | 0.0000000 | 0.0000000 |
-| SBW25(pQBR57)               | SBW25::chrCM(pQBR57) | 40        |  1.9633452 |   9 | 52.228527 | 0.0000000 | 0.0000000 |
-| SBW25(pQBR57::plaCM)        | SBW25::chrCM(pQBR57) | 0         |  0.1333801 |   9 |  2.749415 | 0.0224983 | 0.0449967 |
-| SBW25(pQBR57::plaCM)        | SBW25::chrCM(pQBR57) | 40        |  0.4259115 |   9 |  9.864781 | 0.0000040 | 0.0000080 |
-| SBW25::chrCM(pQBR57::plaCM) | SBW25::chrCM(pQBR57) | 0         | -0.0991252 |   9 | -1.864956 | 0.0950599 | 0.1901198 |
-| SBW25::chrCM(pQBR57::plaCM) | SBW25::chrCM(pQBR57) | 40        | -0.1001060 |   9 | -2.167918 | 0.0583109 | 0.1166217 |
+| reference                   | test                 | selection |       coef |  df |   t_value |   p_value |     p_adj | sign |
+|:----------------------------|:---------------------|:----------|-----------:|----:|----------:|----------:|----------:|:-----|
+| SBW25(pQBR57)               | SBW25::chrCM(pQBR57) | 0         |  0.9914270 |   9 | 24.281337 | 0.0000000 | 0.0000000 | \*   |
+| SBW25(pQBR57)               | SBW25::chrCM(pQBR57) | 40        |  1.9954462 |   9 | 53.082474 | 0.0000000 | 0.0000000 | \*   |
+| SBW25(pQBR57::plaCM)        | SBW25::chrCM(pQBR57) | 0         |  0.1654812 |   9 |  3.411127 | 0.0077358 | 0.0154716 | \*   |
+| SBW25(pQBR57::plaCM)        | SBW25::chrCM(pQBR57) | 40        |  0.4580126 |   9 | 10.608293 | 0.0000022 | 0.0000044 | \*   |
+| SBW25::chrCM(pQBR57::plaCM) | SBW25::chrCM(pQBR57) | 0         | -0.1312263 |   9 | -2.468910 | 0.0356340 | 0.0712679 |      |
+| SBW25::chrCM(pQBR57::plaCM) | SBW25::chrCM(pQBR57) | 40        | -0.1322071 |   9 | -2.863106 | 0.0186855 | 0.0373710 | \*   |
 
 After Bonferroni adjustment, chrCM is significantly fitter than all
-comparisons except for the double-compensated strain.
+comparisons except for the double-compensated strain, especially in the
+presence of mercury.
 
 For the right-hand panel:
 
@@ -2952,9 +3127,9 @@ anova(lm_6_r)
 
     ## Analysis of Variance Table
     ## 
-    ## Response: relative_fitness
+    ## Response: relative_fitness_rc
     ##                     Df  Sum Sq Mean Sq  F value    Pr(>F)    
-    ## reference            1 20.2868 20.2868 1145.416 < 2.2e-16 ***
+    ## reference            1 22.1569 22.1569 1251.004 < 2.2e-16 ***
     ## selection            1  0.5033  0.5033   28.418 5.449e-06 ***
     ## reference:selection  1  2.2617  2.2617  127.697 2.149e-13 ***
     ## Residuals           36  0.6376  0.0177                       
@@ -2968,17 +3143,17 @@ posthoc_r_s <- lsmeans(lm_6_r, pairwise ~ (selection|reference), adjust="none")
 posthoc_r_r <- lsmeans(lm_6_r, pairwise ~ (reference|selection), adjust="none")
 contr_r <- data.frame(posthoc_r_s$contrasts) %>% 
   bind_rows(data.frame(posthoc_r_r$contrasts)) %>%
-  mutate(p.adjust = p.adjust(p.value, method="bonferroni"),
-         sign = ifelse(p.value<0.05, "*", ""))
+  mutate(p_adj = p.adjust(p.value, method="bonferroni"),
+         sign = ifelse(p_adj < 0.05, "*", ""))
 kable(contr_r)
 ```
 
-| contrast                                    | reference                   |   estimate |        SE |  df |    t.ratio |   p.value | selection |  p.adjust | sign |
+| contrast                                    | reference                   |   estimate |        SE |  df |    t.ratio |   p.value | selection |     p_adj | sign |
 |:--------------------------------------------|:----------------------------|-----------:|----------:|----:|-----------:|----------:|:----------|----------:|:-----|
 | selection0 - selection40                    | SBW25(pQBR57)               | -0.6999194 | 0.0595169 |  36 | -11.760004 | 0.0000000 | NA        | 0.0000000 | \*   |
 | selection0 - selection40                    | SBW25::chrCM(pQBR57::plaCM) |  0.2512244 | 0.0595169 |  36 |   4.221057 | 0.0001574 | NA        | 0.0006295 | \*   |
-| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  0.9487468 | 0.0595169 |  36 |  15.940787 | 0.0000000 | 0         | 0.0000000 | \*   |
-| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  1.8998905 | 0.0595169 |  36 |  31.921848 | 0.0000000 | 40        | 0.0000000 | \*   |
+| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  1.0129489 | 0.0595169 |  36 |  17.019508 | 0.0000000 | 0         | 0.0000000 | \*   |
+| SBW25(pQBR57) - SBW25::chrCM(pQBR57::plaCM) | NA                          |  1.9640927 | 0.0595169 |  36 |  33.000568 | 0.0000000 | 40        | 0.0000000 | \*   |
 
 Significant effects of mercury for all comparisons. Significant
 differences between each mode of compensation, both with and without
@@ -2987,26 +3162,27 @@ mercury.
 ``` r
 (posthoc_r_0 <- filter(dat_6_ext, test == "SBW25(pQBR57::plaCM)" &
                            reference %in% c("SBW25(pQBR57)","SBW25::chrCM(pQBR57::plaCM)")) %>%
-  select(reference, test, selection, relative_fitness) %>%
+  select(reference, test, selection, relative_fitness_rc) %>%
   group_by(reference, test, selection) %>% 
-  summarise(values = list(relative_fitness),
+  summarise(values = list(relative_fitness_rc),
             coef = t.test(unlist(values), mu = 0)$estimate,
             df = t.test(unlist(values), mu = 0)$parameter,
             t_value = t.test(unlist(values), mu = 0)$statistic,
             p_value = t.test(unlist(values), mu = 0)$p.value) %>%
   select(-values) %>%
-  mutate(p_adj = p.adjust(p_value, method="bonferroni"))) %>% kable()
+    mutate(p_adj = p.adjust(p_value, method="bonferroni"),
+         sign = ifelse(p_adj<0.05, "*", ""))) %>% kable()
 ```
 
     ## `summarise()` has grouped output by 'reference', 'test'. You can override using
     ## the `.groups` argument.
 
-| reference                   | test                 | selection |       coef |  df |   t_value |   p_value |     p_adj |
-|:----------------------------|:---------------------|:----------|-----------:|----:|----------:|----------:|----------:|
-| SBW25(pQBR57)               | SBW25(pQBR57::plaCM) | 0         |  0.8320867 |   9 | 22.061996 | 0.0000000 | 0.0000000 |
-| SBW25(pQBR57)               | SBW25(pQBR57::plaCM) | 40        |  1.5320061 |   9 | 29.174454 | 0.0000000 | 0.0000000 |
-| SBW25::chrCM(pQBR57::plaCM) | SBW25(pQBR57::plaCM) | 0         | -0.1166601 |   9 | -3.083325 | 0.0130696 | 0.0261392 |
-| SBW25::chrCM(pQBR57::plaCM) | SBW25(pQBR57::plaCM) | 40        | -0.3678845 |   9 | -9.585403 | 0.0000051 | 0.0000102 |
+| reference                   | test                 | selection |       coef |  df |    t_value |   p_value |     p_adj | sign |
+|:----------------------------|:---------------------|:----------|-----------:|----:|-----------:|----------:|----------:|:-----|
+| SBW25(pQBR57)               | SBW25(pQBR57::plaCM) | 0         |  0.8641878 |   9 |  22.913126 | 0.0000000 | 0.0000000 | \*   |
+| SBW25(pQBR57)               | SBW25(pQBR57::plaCM) | 40        |  1.5641071 |   9 |  29.785764 | 0.0000000 | 0.0000000 | \*   |
+| SBW25::chrCM(pQBR57::plaCM) | SBW25(pQBR57::plaCM) | 0         | -0.1487612 |   9 |  -3.931755 | 0.0034488 | 0.0068977 | \*   |
+| SBW25::chrCM(pQBR57::plaCM) | SBW25(pQBR57::plaCM) | 40        | -0.3999855 |   9 | -10.421812 | 0.0000025 | 0.0000051 | \*   |
 
 After Bonferroni adjustment, plaCM is significantly fitter than
 uncompensated, but significantly less fit than the double-compensated.
@@ -3071,7 +3247,7 @@ pd <- position_dodge(width = 0.2)
   theme(axis.text.x=element_text(angle=45, hjust=1))
 ```
 
-![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-82-1.png)<!-- -->
+![](2_ExperimentalAnalysis_files/figure-gfm/unnamed-chunk-86-1.png)<!-- -->
 
 ``` r
 png("./figs/p7.png", width=1.8, height=2.2, units="in", res=300)
@@ -3109,7 +3285,11 @@ Perform equivalence test.
 
 ``` r
 library(TOSTER)
+```
 
+    ## Warning: package 'TOSTER' was built under R version 4.3.3
+
+``` r
 t_TOST(log10_gamma ~ strain, eqb = 0.5,
        data=dat_7)
 ```
@@ -3131,7 +3311,7 @@ t_TOST(log10_gamma ~ strain, eqb = 0.5,
     ## Effect Sizes 
     ##                Estimate     SE              C.I. Conf. Level
     ## Raw             0.01587 0.2113 [-0.3677, 0.3994]         0.9
-    ## Hedges's g(av)  0.03995 0.6471 [-0.8364, 0.9143]         0.9
+    ## Hedges's g(av)  0.03995 0.6325 [-0.8364, 0.9143]         0.9
     ## Note: SMD confidence intervals are an approximation. See vignette("SMD_calcs").
 
 Equivalence test significant, indicating that the values are not
