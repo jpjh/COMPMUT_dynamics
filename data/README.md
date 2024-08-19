@@ -2,7 +2,7 @@
 
 Ecological dynamics of plasmid compensatory mutations: raw data
 
-Associated with the manuscript ***Superiority of chromosomal compared to plasmid-encoded compensatory mutations***
+Associated with the manuscript ***Superiority of a chromosomal compared to a plasmid-encoded compensatory mutation***
 
 Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve Paterson, Ellie Harrison, Michael A. Brockhurst, James P.J. Hall.
 

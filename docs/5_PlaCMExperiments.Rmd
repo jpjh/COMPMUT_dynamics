@@ -65,7 +65,7 @@ t.test(count_blue ~ strain, data=filter(full_counts, expt == "expt_1" & trt == "
 ```
 No significant difference in the means between the groups.
 
-Plot OD600 measurements, correcting by a minimum value.
+Plot OD600 measurements, correcting by a minimum blank value.
 
 ```{r}
 growthcurve_min <- filter(exptdat_acqcost, Time < 1) %>%

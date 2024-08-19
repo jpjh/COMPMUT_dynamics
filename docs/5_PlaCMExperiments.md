@@ -71,7 +71,7 @@ t.test(count_blue ~ strain, data=filter(full_counts, expt == "expt_1" & trt == "
 
 No significant difference in the means between the groups.
 
-Plot OD600 measurements, correcting by a minimum value.
+Plot OD600 measurements, correcting by a minimum blank value.
 
 ``` r
 growthcurve_min <- filter(exptdat_acqcost, Time < 1) %>%
@@ -157,12 +157,11 @@ exptdat_acqcost_gc %>%
   theme(legend.position = "bottom")
 ```
 
-    ## Warning in transformation$transform(x): NaNs produced
+    ## Warning in self$trans$transform(x): NaNs produced
 
-    ## Warning in scale_y_log10(): log-10 transformation introduced infinite values.
+    ## Warning: Transformation introduced infinite values in continuous y-axis
 
-    ## Warning: Removed 886 rows containing missing values or values outside the scale range
-    ## (`geom_line()`).
+    ## Warning: Removed 886 rows containing missing values (`geom_line()`).
 
 ![](5_PlaCMExperiments_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
@@ -181,16 +180,6 @@ png("./figs/p_acqcost.png", width=1.8, height=2.2, units="in", res=300)
 acqcost + theme_pub() + theme(legend.position="bottom") +
   theme(axis.text.x=element_text(angle=45, hjust=1)) +
   theme(legend.position=c(0.7,0.85))
-```
-
-    ## Warning: A numeric `legend.position` argument in `theme()` was deprecated in ggplot2
-    ## 3.5.0.
-    ## ℹ Please use the `legend.position.inside` argument of `theme()` instead.
-    ## This warning is displayed once every 8 hours.
-    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-    ## generated.
-
-``` r
 dev.off()
 ```
 
