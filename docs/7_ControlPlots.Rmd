@@ -51,7 +51,7 @@ ggplot(competition_data, aes(x=reference, y=RF_r)) +
   theme(axis.text.x = element_text(angle=45, hjust=1))
 ```
 
-Looks good -- but ideally want to relabed it and flip it around so it resembles the figure in the main manuscript.
+Looks good -- but ideally want to relabel it and flip it around so it resembles the figure in the main manuscript.
 
 To do this, we want to rename pQBR57d0059 to pQBR57::plaCM.
 

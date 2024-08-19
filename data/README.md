@@ -34,6 +34,9 @@ Analysis scripts are available at https://github.com/jpjh/COMPMUT_dynamics
    - [`7_AcquisitionCosts.csv`](./data/7_AcquisitionCosts.csv), a comma-delimited text file in which columns indicate the time of measurement in hours (`time`), the OD600 measurement (`Measurements`), the corresponding well and row and column (`Well`, `Row`, `Col`), the biological replicate (`Rep`), the strain used (`Strain`), and the treatment (`Trt`; 'T1_trt' are de novo transconjugants, 'T1old_trt' are established transconjugants, and 'D_trt' and 'R1_trt' are donors and recipient only, respectively). 
    - [`8_ControlCompetitionData.csv`](./data/8_ControlCompetitionData.csv), a comma-delimited text file with columns labelled as with `1_RelativeFitnessData.csv`. 
 
+6. Worksheet of model analysis:
+   - [`RHWorkings.nb`](./data/RHWorkings.nb), a Wolfram Mathematica worksheet containing analyses from the model as described in the Supplementary Appendix.
+
 
 ---
 

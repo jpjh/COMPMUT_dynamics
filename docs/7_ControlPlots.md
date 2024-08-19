@@ -33,7 +33,7 @@ ggplot(competition_data, aes(x=reference, y=RF_r)) +
 
 ![](7_ControlPlots_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
-Looks good – but ideally want to relabed it and flip it around so it
+Looks good – but ideally want to relabel it and flip it around so it
 resembles the figure in the main manuscript.
 
 To do this, we want to rename pQBR57d0059 to pQBR57::plaCM.
