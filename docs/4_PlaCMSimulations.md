@@ -423,8 +423,7 @@ p_gamma_scan +
   theme_pub()
 ```
 
-    ## Warning: Removed 105280 rows containing non-finite outside the scale range
-    ## (`stat_align()`).
+    ## Warning: Removed 105280 rows containing non-finite values (`stat_align()`).
 
 ``` r
 dev.off()
@@ -486,7 +485,7 @@ p_gamma_fig_crop <- mod %>%
 ![](4_PlaCMSimulations_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
-tiff("./figs/Fig8_alt.tiff", width=5.2, height=3.6, units="in", res=300)
+tiff("./figs/FigS8.tiff", width=5.2, height=3.6, units="in", res=300)
 doubleplot1
 dev.off()
 ```
@@ -776,8 +775,7 @@ p_transfer_gamma_adj_scan +
   theme_pub()
 ```
 
-    ## Warning: Removed 84224 rows containing non-finite outside the scale range
-    ## (`stat_align()`).
+    ## Warning: Removed 84224 rows containing non-finite values (`stat_align()`).
 
 ``` r
 dev.off()
@@ -880,7 +878,7 @@ dev.off()
     ##                 2
 
 ``` r
-tiff("./figs/Fig8.tiff", width=5.2, height=3.6, units="in", res=300)
+tiff("./figs/FigS8_alt.tiff", width=5.2, height=3.6, units="in", res=300)
 doubleplot
 dev.off()
 ```
@@ -906,6 +904,9 @@ parameters_mod3_adj
     ## 7.107714e-12 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 
     ##     eta_X_1t     eta_X_2t            K           mu 
     ## 0.000000e+00 0.000000e+00 9.693735e+09 0.000000e+00
+
+The continuous transfer model figure was selected as the example as this
+was consistent with the plots provided in Fig S1.
 
 ------------------------------------------------------------------------
 

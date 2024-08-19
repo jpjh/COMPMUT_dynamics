@@ -411,7 +411,7 @@ p5_supp + theme_pub() + theme(legend.position="bottom")
 dev.off()
 ```
 
-There was also an experiment performed with *P. putida* KT2440 as an alternative donor.
+There was also an experiment performed with *P. putida* KT2440 as an alternative recipient.
 
 ```{r}
 (df_expt5 <- df %>%

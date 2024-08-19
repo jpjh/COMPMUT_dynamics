@@ -626,7 +626,7 @@ dev.off()
     ##                 2
 
 There was also an experiment performed with *P. putida* KT2440 as an
-alternative donor.
+alternative recipient.
 
 ``` r
 (df_expt5 <- df %>%

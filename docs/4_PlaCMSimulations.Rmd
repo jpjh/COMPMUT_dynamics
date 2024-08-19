@@ -434,7 +434,7 @@ p_gamma_fig_crop <- mod %>%
   (p_gamma_fig + theme_pub() + 
      theme(axis.text.x=element_text(angle=45, hjust=1), strip.text.x=element_blank())))
 
-tiff("./figs/Fig8_alt.tiff", width=5.2, height=3.6, units="in", res=300)
+tiff("./figs/FigS8.tiff", width=5.2, height=3.6, units="in", res=300)
 doubleplot1
 dev.off()
 ```
@@ -782,7 +782,7 @@ png("./figs/p41.png", width=5.2, height=3.6, units="in", res=300)
 doubleplot
 dev.off()
 
-tiff("./figs/Fig8.tiff", width=5.2, height=3.6, units="in", res=300)
+tiff("./figs/FigS8_alt.tiff", width=5.2, height=3.6, units="in", res=300)
 doubleplot
 dev.off()
 
@@ -795,6 +795,8 @@ Output the parameters used in this model.
 ```{r}
 parameters_mod3_adj
 ```
+
+The continuous transfer model figure was selected as the example as this was consistent with the plots provided in Fig S1.
 
 ---
 
