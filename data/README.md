@@ -33,9 +33,8 @@ Analysis scripts are available at https://github.com/jpjh/COMPMUT_dynamics
    - [`6_TransconjugantConjugation.csv`](./data/6_TransconjugantConjugation.csv), a comma-delimited text file in which columns indicate the strain being tested (`strain`, either pQBR57 or pQBR57∆PQBR570059 [pBR57_delta_59]), the sample taken and relevant timepoint and media used (`trt`, indicating whether the samples target donors, recipients, or transconjugants; `time` indicating whether the samples were taken at the start or end of the experiment; `media` indicating the media used for selective plating), the –log~10~ dilution factor of the plated sample (`dilution`), the volume spread (`spread`), the counts of white or blue colonies (`count_white`, `count_blue`). This table includes the counts for the 100-fold-excess-recipient experiment ('expt_2'), and the transconjugant-growth-rate experiment ('expt_1'), indicated in column `expt`.
    - [`7_AcquisitionCosts.csv`](./data/7_AcquisitionCosts.csv), a comma-delimited text file in which columns indicate the time of measurement in hours (`time`), the OD600 measurement (`Measurements`), the corresponding well and row and column (`Well`, `Row`, `Col`), the biological replicate (`Rep`), the strain used (`Strain`), and the treatment (`Trt`; 'T1_trt' are de novo transconjugants, 'T1old_trt' are established transconjugants, and 'D_trt' and 'R1_trt' are donors and recipient only, respectively). 
    - [`8_ControlCompetitionData.csv`](./data/8_ControlCompetitionData.csv), a comma-delimited text file with columns labelled as with `1_RelativeFitnessData.csv`. 
-
 6. Worksheet of model analysis:
-   - [`RHWorkings.nb`](./data/RHWorkings.nb), a Wolfram Mathematica worksheet containing analyses from the model as described in the Supplementary Appendix.
+   - [`RHWorkings.nb`](./data/RHWorkings.nb) and [`4ODEFixedPointComputations.nb`](./data/4ODEFixedPointComputations.nb), Wolfram Mathematica worksheets containing analyses from the model as described in the Supplementary Appendix.
 
 
 ---

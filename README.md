@@ -1,7 +1,8 @@
 # COMPMUT_dynamics
+
 Ecological dynamics of plasmid compensatory mutations: data and analysis.
 
-Associated with the preprint manuscript ***Superiority of a chromosomal compared to a plasmid-encoded compensatory mutation***, [doi: 10.1101/2024.01.15.575717](https://www.biorxiv.org/content/10.1101/2024.01.15.575717v1)
+Associated with the article ***Superiority of a chromosomal compared to a plasmid-encoded compensatory mutation***, [doi: 10.1101/2024.01.15.575717](https://www.biorxiv.org/content/10.1101/2024.01.15.575717v1)
 
 Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve Paterson, Ellie Harrison, Michael A. Brockhurst, James P.J. Hall.
 
@@ -22,7 +23,7 @@ Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve
 #### Shiny App
 
 1. Code for Shiny app: ([`app.R`](./shiny_app/app.R))
-2. Link to Shiny app server: https://jpjh.shinyapps.io/COMPMOD_shiny/
+2. Link to Shiny app server: http://www.jpjhall.net/plasmid-dynamics-model or https://jpjh.shinyapps.io/COMPMOD_shiny/
 
 ---
 
@@ -46,16 +47,12 @@ Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve
    - [`4_WTGrowthCurve.csv`](./data/4_WTGrowthCurve.csv), associated growth curve data used to calculate alpha for `3_Parameters.txt` and Table S1. A comma-delimited text file in which columns indicate the well of the 96-well plate being measured (`well`), the replicate (`replicate`) a-k, the measurement cycle (`cycle`, measurements were taken every 15 minutes), and the optical density (`value`) as determined by a Tecan Infinite 200 Pro Nano.
 4. Data used to calculate conjugation rates ([`5_ConjugationData.csv`](./data/5_ConjugationData.csv)). A comma-delimited text file in which columns indicate the strain being tested (`strain`, either pQBR57 [pQ57] or pQBR57∆PQBR57_0059 [delta_59]), the time of measurement in hours (`time_h`), the replicate a-f (`rep`), the media on which samples were plated (`media`, which can be used to determine whether counts are of donors, recipients, or transconjugants), the –log~10~ dilution factor of the plated sample (`dilution`) , the volume spread (`spread`), the counts of white or blue colonies (`count_white`, `count_blue`, which refer to recipients and donors respectively), notes on what the counts refer to (`notes`), and whether the data were discarded due to a more accurate measurement from the same culture (`crop`: measurements were cropped by inserting a ‘x’ in this column if more accurate CFU counts were available for this sample). 
 5. Data from experiments investigating plaCM strains:
-
      - [`6_TransconjugantConjugation.csv`](./data/6_TransconjugantConjugation.csv), a comma-delimited text file in which columns indicate the strain being tested (`strain`, either pQBR57 or pQBR57∆PQBR570059 [pBR57_delta_59]), the sample taken and relevant timepoint and media used (`trt`, indicating whether the samples target donors, recipients, or transconjugants; `time` indicating whether the samples were taken at the start or end of the experiment; `media` indicating the media used for selective plating), the –log~10~ dilution factor of the plated sample (`dilution`), the volume spread (`spread`), the counts of white or blue colonies (`count_white`, `count_blue`). This table includes the counts for the 100-fold-excess-recipient experiment ('expt_2'), and the transconjugant-growth-rate experiment ('expt_1'), indicated in column `expt`.
-
      - [`7_AcquisitionCosts.csv`](./data/7_AcquisitionCosts.csv), a comma-delimited text file in which columns indicate the time of measurement in hours (`time`), the OD600 measurement (`Measurements`), the corresponding well and row and column (`Well`, `Row`, `Col`), the biological replicate (`Rep`), the strain used (`Strain`), and the treatment (`Trt`; 'T1_trt' are de novo transconjugants, 'T1old_trt' are established transconjugants, and 'D_trt' and 'R1_trt' are donors and recipient only, respectively). 
-
      - [`8_ControlCompetitionData.csv`](./data/8_ControlCompetitionData.csv), a comma-delimited text file with columns labelled as with `1_RelativeFitnessData.csv`.
-
 6. Worksheet of model analysis:
-
-   - [`RHWorkings.nb`](./data/RHWorkings.nb), a Wolfram Mathematica worksheet containing analyses from the model as described in the Supplementary Appendix.
+     - [`RHWorkings.nb`](./data/RHWorkings.nb) and [`4ODEFixedPointComputations.nb`](./data/4ODEFixedPointComputations.nb), Wolfram Mathematica worksheets containing analyses from the model as described in the Supplementary Appendix.
+   
 ---
 
 Questions, comments, suggestions: please [get in touch](mailto:j.p.j.hall@liverpool.ac.uk)!
