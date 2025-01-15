@@ -2,7 +2,7 @@
 
 Ecological dynamics of plasmid compensatory mutations: data and analysis.
 
-Associated with the article ***Superiority of a chromosomal compared to a plasmid-encoded compensatory mutation***, [doi: 10.1101/2024.01.15.575717](https://www.biorxiv.org/content/10.1101/2024.01.15.575717v1)
+Associated with the article ***A chromosomal mutation is superior to a plasmid-encoded mutation for plasmid fitness cost compensation***, PLoS Biol 22(12): e3002926 [doi: 10.1371/journal.pbio.3002926](https://doi.org/10.1371/journal.pbio.3002926)
 
 Rosanna C.T. Wright, A. Jamie Wood, Michael J. Bottery, Katie J. Muddiman, Steve Paterson, Ellie Harrison, Michael A. Brockhurst, James P.J. Hall.
 
